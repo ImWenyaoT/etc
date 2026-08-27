@@ -20,7 +20,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "fast-xml-parser": "^5.9.3",
+    "fast-xml-parser": "^5.10.1",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
