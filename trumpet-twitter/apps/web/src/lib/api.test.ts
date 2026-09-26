@@ -89,4 +89,55 @@ describe('api client', () => {
       }),
     )
   })
+
+  it('registers and reads a user profile', async () => {
+    fetchMock
+      .mockResolvedValueOnce(response(201, { user: { handle: 'newuser' } }))
+      .mockResolvedValueOnce(response(200, { user: { handle: 'leo' } }))
+
+    await api.register({ handle: 'newuser', displayName: 'New User', password: 'password123' })
+    await api.user('leo')
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:4000/auth/register',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:4000/users/leo',
+      expect.objectContaining({ credentials: 'include' }),
+    )
+  })
+
+  it('likes, unlikes, follows, and unfollows with the matching verbs', async () => {
+    fetchMock.mockResolvedValue(response(200, { post: { id: 'post-1' }, user: { id: 'user-leo' } }))
+
+    await api.likePost('post-1')
+    await api.unlikePost('post-1')
+    await api.follow('user-leo')
+    await api.unfollow('user-leo')
+    await api.userPosts('leo', 'cursor with spaces')
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/posts/post-1/like',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/posts/post-1/like',
+      expect.objectContaining({ method: 'DELETE' }),
+    )
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/users/user-leo/follow',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/users/user-leo/follow',
+      expect.objectContaining({ method: 'DELETE' }),
+    )
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/users/leo/posts?cursor=cursor%20with%20spaces',
+      expect.objectContaining({ credentials: 'include' }),
+    )
+  })
 })
