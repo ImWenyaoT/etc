@@ -14,10 +14,13 @@
     "format:check": "oxfmt --check ."
   },
   "devDependencies": {
-    "@types/node": "^26.0.1",
+    "@types/node": "^24.19.0",
     "oxfmt": "^0.70.0",
     "oxlint": "^1.85.0",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   },
-  "packageManager": "pnpm@11.9.0"
+  "engines": {
+    "node": ">=24.15.0"
+  },
+  "packageManager": "pnpm@12.6.0"
 }

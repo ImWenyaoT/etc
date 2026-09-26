@@ -17,13 +17,16 @@
     "format:check": "oxfmt --check ."
   },
   "devDependencies": {
-    "@types/node": "^26.0.1",
-    "@vitest/coverage-v8": "^4.1.9",
+    "@types/node": "^24.19.0",
+    "@vitest/coverage-v8": "^5.0.2",
     "oxfmt": "^0.70.0",
     "oxlint": "^1.85.0",
-    "tsx": "^4.22.4",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.2"
   },
-  "packageManager": "pnpm@11.9.0"
+  "engines": {
+    "node": ">=24.15.0"
+  },
+  "packageManager": "pnpm@12.6.0"
 }
