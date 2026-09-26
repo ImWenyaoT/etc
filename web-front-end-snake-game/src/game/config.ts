@@ -6,5 +6,5 @@ export const defaultGameConfig: GameConfig = {
   initialDirection: 'right',
   tickMs: 110,
   pointsPerFood: 10,
-  startSeed: 314159
+  startSeed: 314159,
 }

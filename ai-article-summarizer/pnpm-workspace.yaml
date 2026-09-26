@@ -1,6 +1,0 @@
-# Native dependencies allowed to run install/build scripts (pnpm 9+ reads it here).
-allowBuilds:
-  better-sqlite3: true
-  esbuild: true
-  sharp: true
-  unrs-resolver: true

@@ -4,9 +4,6 @@ import { createInitialState } from '../src/game/state'
 import type { GameStatus } from '../src/game/types'
 import { createCanvasRenderer } from '../src/renderer/canvasRenderer'
 
-/**
- * 创建一个记录所有绘制调用的 2D 上下文替身。
- */
 function createMockContext() {
   return {
     clearRect: vi.fn(),
@@ -25,25 +22,19 @@ function createMockContext() {
     strokeStyle: '',
     lineWidth: 0,
     shadowColor: '',
-    shadowBlur: 0
+    shadowBlur: 0,
   }
 }
 
-/**
- * 创建带可注入上下文的 canvas 替身，返回固定的 CSS 尺寸。
- */
 function createMockCanvas(context: unknown): HTMLCanvasElement {
   return {
     width: 0,
     height: 0,
     getContext: vi.fn(() => context),
-    getBoundingClientRect: vi.fn(() => ({ width: 480 }))
+    getBoundingClientRect: vi.fn(() => ({ width: 480 })),
   } as unknown as HTMLCanvasElement
 }
 
-/**
- * 用默认配置构造一份指定状态的游戏状态。
- */
 function stateWithStatus(status: GameStatus) {
   return { ...createInitialState(defaultGameConfig), status }
 }
@@ -64,7 +55,7 @@ describe('createCanvasRenderer', () => {
 
   it('throws when the 2D context is unavailable', () => {
     expect(() => createCanvasRenderer(createMockCanvas(null), defaultGameConfig)).toThrow(
-      'Canvas rendering context is not available'
+      'Canvas rendering context is not available',
     )
   })
 
@@ -95,23 +86,17 @@ describe('createCanvasRenderer', () => {
     expect(context.roundRect).toHaveBeenCalledTimes(state.snake.length)
   })
 
-  it('draws a paused overlay on top of the board', () => {
-    const context = createMockContext()
-    const renderer = createCanvasRenderer(createMockCanvas(context), defaultGameConfig)
+  it('draws paused and game-over overlays on top of the board', () => {
+    const pausedContext = createMockContext()
+    const overContext = createMockContext()
+    const pausedRenderer = createCanvasRenderer(createMockCanvas(pausedContext), defaultGameConfig)
+    const overRenderer = createCanvasRenderer(createMockCanvas(overContext), defaultGameConfig)
 
-    renderer.render(stateWithStatus('paused'))
+    pausedRenderer.render(stateWithStatus('paused'))
+    overRenderer.render(stateWithStatus('game-over'))
 
-    // 背景 + 覆盖层 = 两次 fillRect。
-    expect(context.fillRect).toHaveBeenCalledTimes(2)
-  })
-
-  it('draws a danger overlay on game over', () => {
-    const context = createMockContext()
-    const renderer = createCanvasRenderer(createMockCanvas(context), defaultGameConfig)
-
-    renderer.render(stateWithStatus('game-over'))
-
-    expect(context.fillRect).toHaveBeenCalledTimes(2)
+    expect(pausedContext.fillRect).toHaveBeenCalledTimes(2)
+    expect(overContext.fillRect).toHaveBeenCalledTimes(2)
   })
 
   it('removes the resize listener on destroy', () => {

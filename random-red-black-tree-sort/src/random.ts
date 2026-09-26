@@ -1,12 +1,5 @@
-/**
- * Builds an ordered range from 0 up to count - 1.
- */
-export const range = (count: number): number[] =>
-  Array.from({ length: count }, (_, index) => index)
+export const range = (count: number): number[] => Array.from({ length: count }, (_, index) => index)
 
-/**
- * Returns a shuffled copy of the supplied values using Fisher-Yates.
- */
 export const shuffle = <T>(values: readonly T[], random = Math.random): T[] => {
   const shuffled = [...values]
 
@@ -22,9 +15,5 @@ export const shuffle = <T>(values: readonly T[], random = Math.random): T[] => {
   return shuffled
 }
 
-/**
- * Creates count unique numbers and randomizes their insertion order.
- * Accepts an injectable random source so callers (and tests) can reproduce a run.
- */
 export const createRandomInsertionOrder = (count: number, random = Math.random): number[] =>
   shuffle(range(count), random)

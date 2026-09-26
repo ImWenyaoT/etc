@@ -14,9 +14,6 @@ export interface DatabaseOptions {
 
 const defaultDbPath = path.resolve(process.cwd(), 'data/trumpet.db')
 
-/**
- * Opens SQLite, runs migrations, and returns the database client.
- */
 export const createDatabaseClient = (options: DatabaseOptions = {}): DatabaseClient => {
   // Ensure the parent directory exists BEFORE opening the database file, otherwise
   // better-sqlite3 throws when the target folder (e.g. data/) is missing.
@@ -29,6 +26,6 @@ export const createDatabaseClient = (options: DatabaseOptions = {}): DatabaseCli
   runMigrations(sqlite)
 
   return {
-    sqlite
+    sqlite,
   }
 }

@@ -18,21 +18,11 @@ export interface DemoResult {
   readonly validationErrors: string[]
 }
 
-/**
- * Orders numbers ascending (negative when left precedes right).
- */
 const numberComparator = (left: number, right: number): number => left - right
 
-/**
- * Checks whether the array is sorted in nondecreasing order.
- */
 export const isSorted = (values: readonly number[]): boolean =>
   values.every((value, index) => index === 0 || values[index - 1]! <= value)
 
-/**
- * Runs the random insertion red-black tree sorting workload and returns metrics.
- * The random source is injectable so a run can be reproduced deterministically.
- */
 export const runDemo = (elementCount = 10_000, random = Math.random): DemoResult => {
   const insertionOrder = createRandomInsertionOrder(elementCount, random)
   const tree = new RedBlackTree(numberComparator)
@@ -59,13 +49,10 @@ export const runDemo = (elementCount = 10_000, random = Math.random): DemoResult
     sortedOutput: isSorted(sortedValues),
     firstValues: sortedValues.slice(0, 10),
     lastValues: sortedValues.slice(-10),
-    validationErrors: validation.errors
+    validationErrors: validation.errors,
   }
 }
 
-/**
- * Formats a demo result for human-readable CLI output.
- */
 export const formatDemoResult = (result: DemoResult): string => {
   const lines = [
     'Red-black tree random insertion sort',
@@ -80,7 +67,7 @@ export const formatDemoResult = (result: DemoResult): string => {
     `Black height: ${result.blackHeight}`,
     `Sorted output: ${result.sortedOutput}`,
     `First 10 values: ${result.firstValues.join(', ')}`,
-    `Last 10 values: ${result.lastValues.join(', ')}`
+    `Last 10 values: ${result.lastValues.join(', ')}`,
   ]
 
   return lines.join('\n')

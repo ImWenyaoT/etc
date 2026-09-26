@@ -5,9 +5,6 @@ interface AuthFormProps {
   onAuthenticated: () => void
 }
 
-/**
- * Renders local-account login and registration controls.
- */
 export const AuthForm = ({ onAuthenticated }: AuthFormProps) => {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [handle, setHandle] = useState('mina')
@@ -16,9 +13,6 @@ export const AuthForm = ({ onAuthenticated }: AuthFormProps) => {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  /**
-   * Submits the current auth form to the matching API endpoint.
-   */
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
@@ -46,15 +40,24 @@ export const AuthForm = ({ onAuthenticated }: AuthFormProps) => {
           <p className="brand-mark">Trumpet</p>
           <h1>用一个小号 Twitter 练完整全栈闭环</h1>
           <p className="muted">
-            本地账号、关注流、发帖和点赞都接真实 SQLite。可以先运行 seed，然后用 mina / password123 登录。
+            本地账号、关注流、发帖和点赞都接真实 SQLite。可以先运行 seed，然后用 mina / password123
+            登录。
           </p>
         </div>
 
         <div className="segmented">
-          <button className={mode === 'login' ? 'active' : ''} type="button" onClick={() => setMode('login')}>
+          <button
+            className={mode === 'login' ? 'active' : ''}
+            type="button"
+            onClick={() => setMode('login')}
+          >
             登录
           </button>
-          <button className={mode === 'register' ? 'active' : ''} type="button" onClick={() => setMode('register')}>
+          <button
+            className={mode === 'register' ? 'active' : ''}
+            type="button"
+            onClick={() => setMode('register')}
+          >
             注册
           </button>
         </div>

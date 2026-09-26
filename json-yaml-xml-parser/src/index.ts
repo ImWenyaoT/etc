@@ -9,9 +9,6 @@ import type { DataFormat, ParseOptions, ParseResult, SerializableValue } from '.
 export { detectFormat, isDataFormat, ParserError }
 export type { DataFormat, ParseOptions, ParseResult, SerializableValue }
 
-/**
- * Parses a source string and returns data plus parser metadata.
- */
 export function parseDocument(source: string, options: ParseOptions = {}): ParseResult {
   const format = detectFormat(options.sourcePath, options.format)
   const rawData = parseByFormat(source, format)
@@ -19,20 +16,14 @@ export function parseDocument(source: string, options: ParseOptions = {}): Parse
   return {
     format,
     data: toSerializableValue(rawData),
-    ...(options.sourcePath ? { sourcePath: options.sourcePath } : {})
+    ...(options.sourcePath ? { sourcePath: options.sourcePath } : {}),
   }
 }
 
-/**
- * Parses a source string and returns only the normalized data value.
- */
 export function parseData(source: string, options: ParseOptions = {}): SerializableValue {
   return parseDocument(source, options).data
 }
 
-/**
- * Dispatches parsing to the adapter for the selected format.
- */
 function parseByFormat(source: string, format: DataFormat): unknown {
   switch (format) {
     case 'json':

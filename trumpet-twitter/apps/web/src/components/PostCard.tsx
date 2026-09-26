@@ -13,9 +13,6 @@ interface PostCardProps {
   onSubmitReply: (postId: string) => void
 }
 
-/**
- * Renders a single timeline post with like and reply controls.
- */
 export const PostCard = ({
   post,
   replyValue,
@@ -24,24 +21,32 @@ export const PostCard = ({
   onLike,
   onToggleReply,
   onReplyValueChange,
-  onSubmitReply
+  onSubmitReply,
 }: PostCardProps) => {
   const createdAt = new Intl.DateTimeFormat('zh-CN', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   }).format(new Date(post.createdAt))
 
   return (
     <article className="post-card">
-      <button className="avatar-button" type="button" onClick={() => onOpenProfile(post.author.handle)}>
+      <button
+        className="avatar-button"
+        type="button"
+        onClick={() => onOpenProfile(post.author.handle)}
+      >
         {post.author.displayName.slice(0, 1).toUpperCase()}
       </button>
 
       <div className="post-main">
         <header className="post-header">
-          <button type="button" className="author-button" onClick={() => onOpenProfile(post.author.handle)}>
+          <button
+            type="button"
+            className="author-button"
+            onClick={() => onOpenProfile(post.author.handle)}
+          >
             {post.author.displayName}
           </button>
           <span>@{post.author.handle}</span>
@@ -55,7 +60,11 @@ export const PostCard = ({
             <MessageCircle size={16} aria-hidden="true" />
             Reply {post.replyCount}
           </button>
-          <button className={post.likedByMe ? 'liked' : ''} type="button" onClick={() => onLike(post)}>
+          <button
+            className={post.likedByMe ? 'liked' : ''}
+            type="button"
+            onClick={() => onLike(post)}
+          >
             <Heart size={16} aria-hidden="true" />
             Like {post.likeCount}
           </button>

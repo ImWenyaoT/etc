@@ -20,13 +20,7 @@ interface AuthRepositories {
   sessions: ReturnTypeOfRepository<typeof createSessionRepository>
 }
 
-/**
- * Coordinates local-account registration, login, logout, and session lookup.
- */
 export const createAuthService = ({ users, sessions }: AuthRepositories) => ({
-  /**
-   * Registers a user and returns a fresh session id.
-   */
   register: async (body: RegisterBody) => {
     const existing = users.findByHandle(body.handle)
 
@@ -38,16 +32,13 @@ export const createAuthService = ({ users, sessions }: AuthRepositories) => ({
     const user = users.create({
       handle: body.handle,
       displayName: body.displayName,
-      passwordHash
+      passwordHash,
     })
     const session = sessions.create(user.id)
 
     return { user, session }
   },
 
-  /**
-   * Authenticates a handle/password pair and creates a new session.
-   */
   login: async (body: LoginBody) => {
     const user = users.findByHandle(body.handle)
 
@@ -65,23 +56,17 @@ export const createAuthService = ({ users, sessions }: AuthRepositories) => ({
     return { user, session }
   },
 
-  /**
-   * Ends a session if it exists.
-   */
   logout: (sessionId: string | undefined) => {
     if (sessionId) {
       sessions.delete(sessionId)
     }
   },
 
-  /**
-   * Loads the user associated with a session id.
-   */
   getUserBySession: (sessionId: string | undefined) => {
     if (!sessionId) {
       return null
     }
 
     return sessions.findUserBySessionId(sessionId)
-  }
+  },
 })

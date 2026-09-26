@@ -23,9 +23,6 @@ class TreeNode<T> {
   right: TreeNode<T> | null
   parent: TreeNode<T> | null
 
-  /**
-   * Creates a tree node with the supplied value and color.
-   */
   constructor(value: T, color: Color) {
     this.value = value
     this.color = color
@@ -41,23 +38,14 @@ interface ValidationWalk<T> {
   readonly max: T | null
 }
 
-/**
- * Stores values in a self-balancing binary search tree using red-black rules.
- */
 export class RedBlackTree<T> {
   private root: TreeNode<T> | null = null
   private rotationCount = 0
   private recolorCount = 0
   private insertionCount = 0
 
-  /**
-   * Creates a red-black tree that orders values with the given comparator.
-   */
   constructor(private readonly compare: Comparator<T>) {}
 
-  /**
-   * Inserts a value and restores red-black invariants with rotations and recolors.
-   */
   insert(value: T): void {
     const node = new TreeNode(value, 'red')
     let parent: TreeNode<T> | null = null
@@ -82,43 +70,28 @@ export class RedBlackTree<T> {
     this.rebalanceAfterInsert(node)
   }
 
-  /**
-   * Returns the values in sorted order by walking the tree in-order.
-   */
   toArray(): T[] {
     const values: T[] = []
     this.walkInOrder(this.root, values)
     return values
   }
 
-  /**
-   * Returns the number of nodes currently stored in the tree.
-   */
   size(): number {
     return this.insertionCount
   }
 
-  /**
-   * Calculates the maximum root-to-leaf node count.
-   */
   height(): number {
     return this.measureHeight(this.root)
   }
 
-  /**
-   * Returns operational counters that make balancing work visible.
-   */
   metrics(): TreeMetrics {
     return {
       rotations: this.rotationCount,
       recolors: this.recolorCount,
-      insertions: this.insertionCount
+      insertions: this.insertionCount,
     }
   }
 
-  /**
-   * Checks BST ordering and the red-black properties in one pass.
-   */
   validate(): ValidationResult {
     const errors: string[] = []
 
@@ -126,7 +99,7 @@ export class RedBlackTree<T> {
       return {
         valid: true,
         blackHeight: 1,
-        errors
+        errors,
       }
     }
 
@@ -139,13 +112,10 @@ export class RedBlackTree<T> {
     return {
       valid: errors.length === 0,
       blackHeight: result.blackHeight,
-      errors
+      errors,
     }
   }
 
-  /**
-   * Restores the red-black insert rules after adding a red node.
-   */
   private rebalanceAfterInsert(node: TreeNode<T>): void {
     let current = node
 
@@ -192,23 +162,31 @@ export class RedBlackTree<T> {
     this.setColor(this.root, 'black')
   }
 
-  /**
-   * Rotates a subtree left around its current root.
-   */
   private rotateLeft(node: TreeNode<T> | null): void {
-    if (node === null || node.right === null) {
+    this.rotate(node, 'left')
+  }
+
+  private rotateRight(node: TreeNode<T> | null): void {
+    this.rotate(node, 'right')
+  }
+
+  private rotate(node: TreeNode<T> | null, toward: ChildSide): void {
+    if (node === null) {
       return
     }
 
-    const pivot = node.right
-    node.right = pivot.left
+    const childKey = toward === 'left' ? 'right' : 'left'
+    const pivot = node[childKey]
+    if (pivot === null) {
+      return
+    }
 
-    if (pivot.left !== null) {
-      pivot.left.parent = node
+    node[childKey] = pivot[toward]
+    if (pivot[toward] !== null) {
+      pivot[toward]!.parent = node
     }
 
     pivot.parent = node.parent
-
     if (node.parent === null) {
       this.root = pivot
     } else if (node === node.parent.left) {
@@ -217,44 +195,11 @@ export class RedBlackTree<T> {
       node.parent.right = pivot
     }
 
-    pivot.left = node
+    pivot[toward] = node
     node.parent = pivot
     this.rotationCount += 1
   }
 
-  /**
-   * Rotates a subtree right around its current root.
-   */
-  private rotateRight(node: TreeNode<T> | null): void {
-    if (node === null || node.left === null) {
-      return
-    }
-
-    const pivot = node.left
-    node.left = pivot.right
-
-    if (pivot.right !== null) {
-      pivot.right.parent = node
-    }
-
-    pivot.parent = node.parent
-
-    if (node.parent === null) {
-      this.root = pivot
-    } else if (node === node.parent.right) {
-      node.parent.right = pivot
-    } else {
-      node.parent.left = pivot
-    }
-
-    pivot.right = node
-    node.parent = pivot
-    this.rotationCount += 1
-  }
-
-  /**
-   * Assigns a color and records real color changes for metrics.
-   */
   private setColor(node: TreeNode<T> | null | undefined, color: Color): void {
     if (node === null || node === undefined || node.color === color) {
       return
@@ -264,16 +209,10 @@ export class RedBlackTree<T> {
     this.recolorCount += 1
   }
 
-  /**
-   * Identifies whether a node is its parent's left or right child.
-   */
   private sideOf(node: TreeNode<T>, parent: TreeNode<T>): ChildSide {
     return parent.left === node ? 'left' : 'right'
   }
 
-  /**
-   * Appends values to the output array using in-order traversal.
-   */
   private walkInOrder(node: TreeNode<T> | null, values: T[]): void {
     if (node === null) {
       return
@@ -284,9 +223,6 @@ export class RedBlackTree<T> {
     this.walkInOrder(node.right, values)
   }
 
-  /**
-   * Measures the maximum height of a subtree.
-   */
   private measureHeight(node: TreeNode<T> | null): number {
     if (node === null) {
       return 0
@@ -295,15 +231,12 @@ export class RedBlackTree<T> {
     return 1 + Math.max(this.measureHeight(node.left), this.measureHeight(node.right))
   }
 
-  /**
-   * Validates local ordering, red-node children, and equal black height.
-   */
   private validateNode(node: TreeNode<T> | null, errors: string[]): ValidationWalk<T> {
     if (node === null) {
       return {
         blackHeight: 1,
         min: null,
-        max: null
+        max: null,
       }
     }
 
@@ -335,7 +268,7 @@ export class RedBlackTree<T> {
     return {
       blackHeight: left.blackHeight + (node.color === 'black' ? 1 : 0),
       min: left.min ?? node.value,
-      max: right.max ?? node.value
+      max: right.max ?? node.value,
     }
   }
 }

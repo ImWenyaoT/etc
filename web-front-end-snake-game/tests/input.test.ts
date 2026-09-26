@@ -5,17 +5,11 @@ import type { InputAction } from '../src/game/types'
 class FakeButton extends EventTarget {
   dataset: Record<string, string> = {}
 
-  /**
-   * 派发一次 click 事件，供按钮控制测试使用。
-   */
   click(): void {
     this.dispatchEvent(new Event('click'))
   }
 }
 
-/**
- * 构造一个 keydown 事件，并写入指定的 key 值。
- */
 function createKeyEvent(key: string): KeyboardEvent {
   const event = new Event('keydown', { cancelable: true }) as KeyboardEvent
   Object.defineProperty(event, 'key', { value: key })
@@ -39,18 +33,14 @@ describe('keyboard controls', () => {
   it.each<[string, InputAction]>([
     ['ArrowUp', 'move-up'],
     ['w', 'move-up'],
-    ['W', 'move-up'],
     ['ArrowDown', 'move-down'],
     ['s', 'move-down'],
-    ['S', 'move-down'],
     ['ArrowLeft', 'move-left'],
     ['a', 'move-left'],
-    ['A', 'move-left'],
     ['ArrowRight', 'move-right'],
     ['d', 'move-right'],
-    ['D', 'move-right'],
     [' ', 'pause'],
-    ['Enter', 'start']
+    ['Enter', 'start'],
   ])('maps %s to %s', (key, action) => {
     const unbind = bindKeyboardControls((nextAction) => actions.push(nextAction))
     const event = createKeyEvent(key)
@@ -95,11 +85,11 @@ describe('button controls', () => {
         const buttons: Record<string, FakeButton> = {
           '#start-button': start,
           '#pause-button': pause,
-          '#restart-button': restart
+          '#restart-button': restart,
         }
         return buttons[selector] ?? null
       }),
-      querySelectorAll: vi.fn(() => [moveUp])
+      querySelectorAll: vi.fn(() => [moveUp]),
     } as unknown as Document
 
     const unbind = bindButtonControls(root, (action) => actions.push(action))

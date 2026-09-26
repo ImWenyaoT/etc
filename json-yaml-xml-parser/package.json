@@ -1,37 +1,37 @@
 {
   "name": "json-yaml-xml-parser",
   "version": "0.1.0",
-  "packageManager": "pnpm@11.9.0",
   "description": "A TypeScript Node.js parser for JSON, YAML, and XML documents.",
   "license": "MIT",
-  "type": "module",
   "bin": {
     "data-parser": "./dist/src/cli.js"
   },
+  "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsx src/cli.ts",
-    "lint": "eslint src test",
+    "lint": "oxlint . && oxfmt --check .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
-  },
-  "engines": {
-    "node": ">=20"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check ."
   },
   "dependencies": {
     "fast-xml-parser": "^5.9.3",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@types/node": "^26.0.1",
     "@vitest/coverage-v8": "^4.1.9",
-    "eslint": "^10.6.0",
-    "globals": "^17.7.0",
+    "oxfmt": "^0.70.0",
+    "oxlint": "^1.85.0",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.62.1",
     "vitest": "^4.1.9"
-  }
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@11.9.0"
 }

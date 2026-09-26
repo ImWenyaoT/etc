@@ -24,9 +24,6 @@ let persistedBestScore = state.bestScore
 
 const renderer = createCanvasRenderer(canvas, defaultGameConfig)
 
-/**
- * 查找必需 DOM 元素，缺失时尽早失败并给出明确 selector。
- */
 function requireElement<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector)
 
@@ -37,20 +34,14 @@ function requireElement<T extends Element>(selector: string): T {
   return element
 }
 
-/**
- * 将输入动作排队，让输入采样和固定 tick 推进保持解耦。
- */
 function queueAction(action: InputAction): void {
   actionQueue.push(action)
 }
 
-/**
- * 消化所有排队动作，并通过纯规则函数得到下一份状态。
- */
 function flushActions(currentState: GameState): GameState {
   const nextState = actionQueue.reduce(
     (reducedState, action) => reduceAction(reducedState, action, defaultGameConfig),
-    currentState
+    currentState,
   )
 
   actionQueue = []
@@ -58,18 +49,12 @@ function flushActions(currentState: GameState): GameState {
   return nextState
 }
 
-/**
- * 更新分数和状态文本，HUD 只从游戏状态派生。
- */
 function renderHud(currentState: GameState): void {
   scoreElement.textContent = String(currentState.score)
   bestScoreElement.textContent = String(currentState.bestScore)
   statusElement.textContent = getStatusText(currentState)
 }
 
-/**
- * 根据游戏状态返回面向玩家的简短状态提示。
- */
 function getStatusText(currentState: GameState): string {
   if (currentState.status === 'idle') {
     return '按 Start 开始'
@@ -90,9 +75,6 @@ function getStatusText(currentState: GameState): string {
   return '运行中'
 }
 
-/**
- * 按固定时间步推进游戏，渲染则跟随浏览器帧率刷新。
- */
 function gameLoop(frameTime: number): void {
   const delta = Math.min(frameTime - lastFrameTime, maxFrameDeltaMs)
   lastFrameTime = frameTime

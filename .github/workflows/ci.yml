@@ -21,7 +21,6 @@ jobs:
           - random-red-black-tree-sort
           - web-front-end-snake-game
           - trumpet-twitter
-          - ai-article-summarizer
     defaults:
       run:
         working-directory: ${{ matrix.project }}

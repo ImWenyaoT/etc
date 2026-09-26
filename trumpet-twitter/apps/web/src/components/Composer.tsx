@@ -10,9 +10,6 @@ interface ComposerProps {
   onSubmit: () => void
 }
 
-/**
- * Renders the shared post and reply composer.
- */
 export const Composer = ({
   value,
   placeholder = 'What are you building?',
@@ -20,13 +17,10 @@ export const Composer = ({
   isSubmitting = false,
   compact = false,
   onChange,
-  onSubmit
+  onSubmit,
 }: ComposerProps) => {
   const remaining = 280 - value.length
 
-  /**
-   * Handles form submission while preserving button keyboard behavior.
-   */
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     onSubmit()
@@ -44,7 +38,11 @@ export const Composer = ({
       />
       <div className="composer-footer">
         <span className={remaining < 30 ? 'counter danger' : 'counter'}>{remaining}</span>
-        <button className="primary-button small" type="submit" disabled={!value.trim() || isSubmitting}>
+        <button
+          className="primary-button small"
+          type="submit"
+          disabled={!value.trim() || isSubmitting}
+        >
           <Send size={16} aria-hidden="true" />
           {isSubmitting ? '发送中' : buttonLabel}
         </button>

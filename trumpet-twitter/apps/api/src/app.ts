@@ -8,7 +8,7 @@ import {
   loginBodySchema,
   postParamsSchema,
   registerBodySchema,
-  userParamsSchema
+  userParamsSchema,
 } from '@trumpet/shared'
 import { createDatabaseClient } from './db/client.js'
 import { requireAuth } from './http/context.js'
@@ -26,31 +26,36 @@ export interface AppOptions {
   sqlite?: Database.Database
 }
 
-/**
- * Attaches the session cookie to the response.
- */
+type AsyncRoute = (request: express.Request, response: express.Response) => void | Promise<void>
+
+const wrap =
+  (handler: AsyncRoute): express.RequestHandler =>
+  (request, response, next) => {
+    Promise.resolve(handler(request, response)).catch(next)
+  }
+
 const setSessionCookie = (response: express.Response, session: { id: string; expiresAt: Date }) => {
   response.cookie(sessionCookieName, session.id, {
     httpOnly: true,
     sameSite: 'lax',
     expires: session.expiresAt,
-    secure: false
+    secure: false,
   })
 }
 
-/**
- * Builds the Express app and wires HTTP routes to repositories and services.
- */
 export const createApp = (options: AppOptions = {}) => {
   const client = createDatabaseClient({
     ...(options.dbFile ? { filePath: options.dbFile } : {}),
-    ...(options.sqlite ? { sqlite: options.sqlite } : {})
+    ...(options.sqlite ? { sqlite: options.sqlite } : {}),
   })
   const users = createUserRepository(client)
   const sessions = createSessionRepository(client)
   const posts = createPostRepository(client)
   const auth = createAuthService({ users, sessions })
   const app = express()
+  const viewerId = (request: express.Request) => request.currentUser!.id
+  const queryCursor = (request: express.Request) =>
+    typeof request.query.cursor === 'string' ? request.query.cursor : null
 
   app.use(cors({ origin: process.env.WEB_ORIGIN ?? 'http://localhost:5173', credentials: true }))
   app.use(express.json())
@@ -64,33 +69,23 @@ export const createApp = (options: AppOptions = {}) => {
     response.json({ ok: true })
   })
 
-  app.post('/auth/register', async (request, response, next) => {
-    try {
-      const body = registerBodySchema.parse(request.body)
-      const result = await auth.register(body)
+  app.post(
+    '/auth/register',
+    wrap(async (request, response) => {
+      const result = await auth.register(registerBodySchema.parse(request.body))
       setSessionCookie(response, result.session)
+      response.status(201).json({ user: toUserView(result.user) })
+    }),
+  )
 
-      response.status(201).json({
-        user: toUserView(result.user)
-      })
-    } catch (error) {
-      next(error)
-    }
-  })
-
-  app.post('/auth/login', async (request, response, next) => {
-    try {
-      const body = loginBodySchema.parse(request.body)
-      const result = await auth.login(body)
+  app.post(
+    '/auth/login',
+    wrap(async (request, response) => {
+      const result = await auth.login(loginBodySchema.parse(request.body))
       setSessionCookie(response, result.session)
-
-      response.json({
-        user: toUserView(result.user)
-      })
-    } catch (error) {
-      next(error)
-    }
-  })
+      response.json({ user: toUserView(result.user) })
+    }),
+  )
 
   app.post('/auth/logout', (request, response) => {
     auth.logout(request.cookies?.[sessionCookieName])
@@ -99,148 +94,108 @@ export const createApp = (options: AppOptions = {}) => {
   })
 
   app.get('/me', (request, response) => {
-    response.json({
-      user: request.currentUser ? toUserView(request.currentUser) : null
-    })
+    response.json({ user: request.currentUser ? toUserView(request.currentUser) : null })
   })
 
-  app.post('/posts', requireAuth, (request, response, next) => {
-    try {
+  app.post(
+    '/posts',
+    requireAuth,
+    wrap((request, response) => {
       const body = createPostBodySchema.parse(request.body)
-
       if (body.parentId && !posts.exists(body.parentId)) {
         throw new HttpError('parent_not_found', '回复的帖子不存在', 404)
       }
-
       const id = posts.create({
-        authorId: request.currentUser!.id,
+        authorId: viewerId(request),
         body: body.body,
-        parentId: body.parentId ?? null
+        parentId: body.parentId ?? null,
       })
-      const post = posts.findById(id, request.currentUser!.id)
-
-      response.status(201).json({ post })
-    } catch (error) {
-      next(error)
-    }
-  })
+      response.status(201).json({ post: posts.findById(id, viewerId(request)) })
+    }),
+  )
 
   app.get('/timeline', requireAuth, (request, response) => {
-    const cursor = typeof request.query.cursor === 'string' ? request.query.cursor : null
-    response.json(posts.timeline(request.currentUser!.id, cursor))
+    response.json(posts.timeline(viewerId(request), queryCursor(request)))
   })
 
-  app.post('/posts/:id/like', requireAuth, (request, response, next) => {
-    try {
+  const mutateLike = (liked: boolean): express.RequestHandler =>
+    wrap((request, response) => {
       const { id } = postParamsSchema.parse(request.params)
-
       if (!posts.exists(id)) {
         throw new HttpError('post_not_found', '帖子不存在', 404)
       }
-
-      posts.like(request.currentUser!.id, id)
-      response.json({ post: posts.findById(id, request.currentUser!.id) })
-    } catch (error) {
-      next(error)
-    }
-  })
-
-  app.delete('/posts/:id/like', requireAuth, (request, response, next) => {
-    try {
-      const { id } = postParamsSchema.parse(request.params)
-
-      if (!posts.exists(id)) {
-        throw new HttpError('post_not_found', '帖子不存在', 404)
+      if (liked) {
+        posts.like(viewerId(request), id)
+      } else {
+        posts.unlike(viewerId(request), id)
       }
+      response.json({ post: posts.findById(id, viewerId(request)) })
+    })
 
-      posts.unlike(request.currentUser!.id, id)
-      response.json({ post: posts.findById(id, request.currentUser!.id) })
-    } catch (error) {
-      next(error)
-    }
-  })
+  app.post('/posts/:id/like', requireAuth, mutateLike(true))
+  app.delete('/posts/:id/like', requireAuth, mutateLike(false))
 
-  app.post('/users/:id/follow', requireAuth, (request, response, next) => {
-    try {
+  app.post(
+    '/users/:id/follow',
+    requireAuth,
+    wrap((request, response) => {
       const { id } = followParamsSchema.parse(request.params)
-
       if (!users.exists(id)) {
         throw new HttpError('user_not_found', '用户不存在', 404)
       }
-
-      if (request.currentUser!.id === id) {
+      if (viewerId(request) === id) {
         throw new HttpError('self_follow_not_allowed', '不能关注自己', 400)
       }
-
-      users.follow(request.currentUser!.id, id)
-      const user = users.findById(id)
-
+      users.follow(viewerId(request), id)
       response.json({
-        user: toUserView(user!, users.getStats(id, request.currentUser!.id))
+        user: toUserView(users.findById(id)!, users.getStats(id, viewerId(request))),
       })
-    } catch (error) {
-      next(error)
-    }
-  })
+    }),
+  )
 
-  app.delete('/users/:id/follow', requireAuth, (request, response, next) => {
-    try {
+  app.delete(
+    '/users/:id/follow',
+    requireAuth,
+    wrap((request, response) => {
       const { id } = followParamsSchema.parse(request.params)
-      users.unfollow(request.currentUser!.id, id)
+      users.unfollow(viewerId(request), id)
       const user = users.findById(id)
-
       if (!user) {
         throw new HttpError('user_not_found', '用户不存在', 404)
       }
+      response.json({ user: toUserView(user, users.getStats(id, viewerId(request))) })
+    }),
+  )
 
-      response.json({
-        user: toUserView(user, users.getStats(id, request.currentUser!.id))
-      })
-    } catch (error) {
-      next(error)
-    }
-  })
-
-  app.get('/users/:handle', (request, response, next) => {
-    try {
+  app.get(
+    '/users/:handle',
+    wrap((request, response) => {
       const { handle } = userParamsSchema.parse(request.params)
       const user = users.findByHandle(handle)
-
       if (!user) {
         throw new HttpError('user_not_found', '用户不存在', 404)
       }
-
-      response.json({
-        user: toUserView(user, users.getStats(user.id, request.currentUser?.id ?? null))
-      })
-    } catch (error) {
-      next(error)
-    }
-  })
-
-  app.get('/users/:handle/posts', (request, response, next) => {
-    try {
-      const { handle } = userParamsSchema.parse(request.params)
-      const user = users.findByHandle(handle)
-
-      if (!user) {
-        throw new HttpError('user_not_found', '用户不存在', 404)
-      }
-
-      const cursor = typeof request.query.cursor === 'string' ? request.query.cursor : null
       response.json({
         user: toUserView(user, users.getStats(user.id, request.currentUser?.id ?? null)),
-        ...posts.byAuthor(user.id, request.currentUser?.id ?? '', cursor)
       })
-    } catch (error) {
-      next(error)
-    }
-  })
+    }),
+  )
+
+  app.get(
+    '/users/:handle/posts',
+    wrap((request, response) => {
+      const { handle } = userParamsSchema.parse(request.params)
+      const user = users.findByHandle(handle)
+      if (!user) {
+        throw new HttpError('user_not_found', '用户不存在', 404)
+      }
+      response.json({
+        user: toUserView(user, users.getStats(user.id, request.currentUser?.id ?? null)),
+        ...posts.byAuthor(user.id, request.currentUser?.id ?? '', queryCursor(request)),
+      })
+    }),
+  )
 
   app.use(errorHandler)
-
-  return {
-    app,
-    client
-  }
+  return { app, client }
 }

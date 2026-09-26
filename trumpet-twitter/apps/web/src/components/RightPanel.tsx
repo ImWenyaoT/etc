@@ -7,12 +7,9 @@ interface RightPanelProps {
 
 const suggestions = [
   { handle: 'leo', name: 'Leo Park', note: 'API contracts and testing' },
-  { handle: 'ava', name: 'Ava Stone', note: 'Product loops and systems' }
+  { handle: 'ava', name: 'Ava Stone', note: 'Product loops and systems' },
 ]
 
-/**
- * Renders lightweight context beside the timeline.
- */
 export const RightPanel = ({ user, onOpenProfile }: RightPanelProps) => (
   <aside className="right-panel">
     <section className="profile-summary">
@@ -25,9 +22,15 @@ export const RightPanel = ({ user, onOpenProfile }: RightPanelProps) => (
       <h3>People to inspect</h3>
       <div className="suggestion-list">
         {suggestions.map((suggestion) => (
-          <button key={suggestion.handle} type="button" onClick={() => onOpenProfile(suggestion.handle)}>
+          <button
+            key={suggestion.handle}
+            type="button"
+            onClick={() => onOpenProfile(suggestion.handle)}
+          >
             <span>{suggestion.name}</span>
-            <small>@{suggestion.handle} · {suggestion.note}</small>
+            <small>
+              @{suggestion.handle} · {suggestion.note}
+            </small>
           </button>
         ))}
       </div>

@@ -6,21 +6,15 @@ const extensionFormats: Record<string, DataFormat> = {
   '.json': 'json',
   '.yaml': 'yaml',
   '.yml': 'yaml',
-  '.xml': 'xml'
+  '.xml': 'xml',
 }
 
 const supportedFormats: DataFormat[] = ['json', 'yaml', 'xml']
 
-/**
- * Checks whether an arbitrary string is a supported data format.
- */
 export function isDataFormat(value: string): value is DataFormat {
   return supportedFormats.includes(value.toLowerCase() as DataFormat)
 }
 
-/**
- * Detects a parser format from an explicit override or a file extension.
- */
 export function detectFormat(filePath?: string, explicitFormat?: DataFormat | string): DataFormat {
   if (explicitFormat) {
     const normalized = explicitFormat.toLowerCase()
@@ -43,5 +37,7 @@ export function detectFormat(filePath?: string, explicitFormat?: DataFormat | st
     return format
   }
 
-  throw new ParserError(`Unsupported file extension "${extension || '(none)'}". Expected .json, .yaml, .yml, or .xml.`)
+  throw new ParserError(
+    `Unsupported file extension "${extension || '(none)'}". Expected .json, .yaml, .yml, or .xml.`,
+  )
 }

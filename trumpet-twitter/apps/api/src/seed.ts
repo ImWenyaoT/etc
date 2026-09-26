@@ -7,9 +7,6 @@ const client = createDatabaseClient({ filePath: process.env.DATABASE_URL ?? 'dat
 const users = createUserRepository(client)
 const posts = createPostRepository(client)
 
-/**
- * Creates a deterministic local dataset for development and manual QA.
- */
 const seed = async () => {
   users.deleteAll()
 
@@ -24,23 +21,23 @@ const seed = async () => {
 
   const firstPostId = posts.create({
     authorId: leo.id,
-    body: 'Shipping a tiny social app feels like the fastest way to learn product-shaped full stack work.'
+    body: 'Shipping a tiny social app feels like the fastest way to learn product-shaped full stack work.',
   })
 
   posts.create({
     authorId: mina.id,
-    body: 'Trumpet v1 is text-only on purpose: fewer surfaces, better feedback loops.'
+    body: 'Trumpet v1 is text-only on purpose: fewer surfaces, better feedback loops.',
   })
 
   posts.create({
     authorId: ava.id,
-    body: 'The best part of a follow graph is how much future product can hang from one small table.'
+    body: 'The best part of a follow graph is how much future product can hang from one small table.',
   })
 
   posts.create({
     authorId: mina.id,
     body: 'Agreed. Replies are already modeled as posts with parentId.',
-    parentId: firstPostId
+    parentId: firstPostId,
   })
 
   posts.like(mina.id, firstPostId)

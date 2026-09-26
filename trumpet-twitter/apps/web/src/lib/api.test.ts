@@ -12,14 +12,11 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-/**
- * Creates a minimal fetch response object for API client tests.
- */
 function response(status: number, body?: unknown) {
   return {
     ok: status >= 200 && status < 300,
     status,
-    json: vi.fn(async () => body)
+    json: vi.fn(async () => body),
   }
 }
 
@@ -36,8 +33,8 @@ describe('api client', () => {
       cache: 'no-store',
       credentials: 'include',
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     })
   })
 
@@ -50,8 +47,8 @@ describe('api client', () => {
       'http://localhost:4000/timeline?cursor=cursor%20with%20spaces',
       expect.objectContaining({
         cache: 'no-store',
-        credentials: 'include'
-      })
+        credentials: 'include',
+      }),
     )
   })
 
@@ -61,21 +58,18 @@ describe('api client', () => {
     await expect(api.logout()).resolves.toBeUndefined()
   })
 
-  it('throws server-provided error messages', async () => {
-    fetchMock.mockResolvedValue(response(400, { error: { message: '请求格式不正确' } }))
+  it('throws server-provided error messages and a fallback for non-JSON bodies', async () => {
+    fetchMock
+      .mockResolvedValueOnce(response(400, { error: { message: '请求格式不正确' } }))
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: vi.fn(async () => {
+          throw new Error('not json')
+        }),
+      })
 
     await expect(api.createPost({ body: '' })).rejects.toThrow('请求格式不正确')
-  })
-
-  it('throws a fallback message when an error body is not JSON', async () => {
-    fetchMock.mockResolvedValue({
-      ok: false,
-      status: 500,
-      json: vi.fn(async () => {
-        throw new Error('not json')
-      })
-    })
-
     await expect(api.me()).rejects.toThrow('请求失败')
   })
 
@@ -90,9 +84,9 @@ describe('api client', () => {
         method: 'POST',
         body: JSON.stringify({
           body: 'hello',
-          parentId: '7cb2c370-ad6b-4385-9b68-d0c5f30580c9'
-        })
-      })
+          parentId: '7cb2c370-ad6b-4385-9b68-d0c5f30580c9',
+        }),
+      }),
     )
   })
 })

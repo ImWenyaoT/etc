@@ -9,9 +9,6 @@ type Agent = ReturnType<typeof request.agent>
 let testApp: TestApp
 const missingId = '2e7db1ab-4f91-4a36-bf71-7a1396008c3d'
 
-/**
- * Registers a user through the public API and keeps the cookie jar.
- */
 const registerAgent = async (handle: string, displayName = handle) => {
   const agent = request.agent(testApp.app)
   const response = await agent
@@ -21,21 +18,15 @@ const registerAgent = async (handle: string, displayName = handle) => {
 
   return {
     agent,
-    user: response.body.user as { id: string; handle: string }
+    user: response.body.user as { id: string; handle: string },
   }
 }
 
-/**
- * Creates a post as the provided authenticated agent.
- */
 const createPost = async (agent: Agent, body: string) => {
   const response = await agent.post('/posts').send({ body }).expect(201)
   return response.body.post as { id: string; body: string; likeCount: number }
 }
 
-/**
- * Reads a JSON API error code from a Supertest response body.
- */
 const errorCode = (response: request.Response) => {
   return response.body.error?.code as string | undefined
 }
@@ -49,16 +40,15 @@ afterEach(() => {
 })
 
 describe('auth', () => {
-  it('reports health without requiring a session', async () => {
-    const response = await request(testApp.app).get('/health').expect(200)
-
-    expect(response.body).toEqual({ ok: true })
-  })
-
   it('returns null for /me when the cookie is missing or stale', async () => {
+    const health = await request(testApp.app).get('/health').expect(200)
     const missing = await request(testApp.app).get('/me').expect(200)
-    const stale = await request(testApp.app).get('/me').set('Cookie', 'session_id=missing').expect(200)
+    const stale = await request(testApp.app)
+      .get('/me')
+      .set('Cookie', 'session_id=missing')
+      .expect(200)
 
+    expect(health.body).toEqual({ ok: true })
     expect(missing.body.user).toBeNull()
     expect(stale.body.user).toBeNull()
   })
@@ -118,34 +108,28 @@ describe('auth', () => {
   it('rejects invalid login credentials', async () => {
     await registerAgent('leo', 'Leo Park')
 
-    const response = await request(testApp.app)
+    const wrong = await request(testApp.app)
       .post('/auth/login')
       .send({ handle: 'leo', password: 'wrongpass' })
       .expect(401)
-
-    expect(errorCode(response)).toBe('invalid_credentials')
-  })
-
-  it('returns the same invalid credentials code for missing accounts', async () => {
-    const response = await request(testApp.app)
+    const missing = await request(testApp.app)
       .post('/auth/login')
       .send({ handle: 'ghost', password: 'password123' })
       .expect(401)
 
-    expect(errorCode(response)).toBe('invalid_credentials')
+    expect(errorCode(wrong)).toBe('invalid_credentials')
+    expect(errorCode(missing)).toBe('invalid_credentials')
   })
 })
 
 describe('posts and timeline', () => {
-  it('blocks posting when unauthenticated', async () => {
-    await request(testApp.app).post('/posts').send({ body: 'No cookie' }).expect(401)
-  })
-
-  it('blocks timeline, likes, and follows when unauthenticated', async () => {
+  it('blocks timeline, likes, posts, and follows when unauthenticated', async () => {
+    const post = await request(testApp.app).post('/posts').send({ body: 'No cookie' }).expect(401)
     const postLike = await request(testApp.app).post(`/posts/${missingId}/like`).expect(401)
     const follow = await request(testApp.app).post(`/users/${missingId}/follow`).expect(401)
     const timeline = await request(testApp.app).get('/timeline').expect(401)
 
+    expect(errorCode(post)).toBe('unauthorized')
     expect(errorCode(postLike)).toBe('unauthorized')
     expect(errorCode(follow)).toBe('unauthorized')
     expect(errorCode(timeline)).toBe('unauthorized')
@@ -155,7 +139,10 @@ describe('posts and timeline', () => {
     const mina = await registerAgent('mina', 'Mina Chen')
 
     const empty = await mina.agent.post('/posts').send({ body: '   ' }).expect(400)
-    const tooLong = await mina.agent.post('/posts').send({ body: 'x'.repeat(281) }).expect(400)
+    const tooLong = await mina.agent
+      .post('/posts')
+      .send({ body: 'x'.repeat(281) })
+      .expect(400)
     const missingParent = await mina.agent
       .post('/posts')
       .send({ body: 'Reply to nothing', parentId: missingId })
@@ -182,16 +169,14 @@ describe('posts and timeline', () => {
     timeline = await mina.agent.get('/timeline').expect(200)
     expect(timeline.body.items.map((post: { body: string }) => post.body)).toEqual([
       'My own post',
-      'Visible after following'
+      'Visible after following',
     ])
 
     await mina.agent.post(`/users/${ava.user.id}/follow`).expect(200)
     timeline = await mina.agent.get('/timeline').expect(200)
-    expect(timeline.body.items.map((post: { body: string }) => post.body).sort()).toEqual([
-      'Hidden until followed',
-      'My own post',
-      'Visible after following'
-    ].sort())
+    expect(timeline.body.items.map((post: { body: string }) => post.body).sort()).toEqual(
+      ['Hidden until followed', 'My own post', 'Visible after following'].sort(),
+    )
   })
 
   it('creates replies as posts and increments the parent reply count', async () => {
@@ -204,11 +189,15 @@ describe('posts and timeline', () => {
       .expect(201)
 
     const timeline = await mina.agent.get('/timeline').expect(200)
-    const refreshedParent = timeline.body.items.find((post: { id: string }) => post.id === parent.id)
+    const refreshedParent = timeline.body.items.find(
+      (post: { id: string }) => post.id === parent.id,
+    )
 
     expect(reply.body.post.parentId).toBe(parent.id)
     expect(refreshedParent.replyCount).toBe(1)
-    expect(timeline.body.items.map((post: { body: string }) => post.body)).not.toContain('A real reply')
+    expect(timeline.body.items.map((post: { body: string }) => post.body)).not.toContain(
+      'A real reply',
+    )
   })
 
   it('likes and unlikes a post without duplicate likes', async () => {
@@ -224,16 +213,11 @@ describe('posts and timeline', () => {
     const unlike = await mina.agent.delete(`/posts/${post.id}/like`).expect(200)
     expect(unlike.body.post.likeCount).toBe(0)
     expect(unlike.body.post.likedByMe).toBe(false)
-  })
 
-  it('returns 404 when liking or unliking a missing post', async () => {
-    const mina = await registerAgent('mina', 'Mina Chen')
-
-    const like = await mina.agent.post(`/posts/${missingId}/like`).expect(404)
-    const unlike = await mina.agent.delete(`/posts/${missingId}/like`).expect(404)
-
-    expect(errorCode(like)).toBe('post_not_found')
-    expect(errorCode(unlike)).toBe('post_not_found')
+    const missingLike = await mina.agent.post(`/posts/${missingId}/like`).expect(404)
+    const missingUnlike = await mina.agent.delete(`/posts/${missingId}/like`).expect(404)
+    expect(errorCode(missingLike)).toBe('post_not_found')
+    expect(errorCode(missingUnlike)).toBe('post_not_found')
   })
 
   it('returns a stable cursor for following timeline pagination', async () => {
@@ -247,23 +231,18 @@ describe('posts and timeline', () => {
     expect(firstPage.body.items).toHaveLength(20)
     expect(firstPage.body.nextCursor).toEqual(expect.any(String))
 
-    const secondPage = await mina.agent.get(`/timeline?cursor=${firstPage.body.nextCursor}`).expect(200)
+    const secondPage = await mina.agent
+      .get(`/timeline?cursor=${firstPage.body.nextCursor}`)
+      .expect(200)
+    const malformed = await mina.agent.get('/timeline?cursor=not-base64-json').expect(200)
     const seenBodies = [
       ...firstPage.body.items.map((post: { body: string }) => post.body),
-      ...secondPage.body.items.map((post: { body: string }) => post.body)
+      ...secondPage.body.items.map((post: { body: string }) => post.body),
     ]
 
     expect(secondPage.body.items).toHaveLength(5)
     expect(new Set(seenBodies)).toHaveLength(25)
-  })
-
-  it('ignores malformed timeline cursors by returning the first page', async () => {
-    const mina = await registerAgent('mina', 'Mina Chen')
-    await createPost(mina.agent, 'Cursor fallback')
-
-    const timeline = await mina.agent.get('/timeline?cursor=not-base64-json').expect(200)
-
-    expect(timeline.body.items.map((post: { body: string }) => post.body)).toEqual(['Cursor fallback'])
+    expect(malformed.body.items).toHaveLength(20)
   })
 })
 
@@ -283,10 +262,12 @@ describe('profiles and follows', () => {
       displayName: 'Leo Park',
       followerCount: 1,
       followingCount: 0,
-      followedByMe: true
+      followedByMe: true,
     })
     expect(posts.body.user.handle).toBe('leo')
-    expect(posts.body.items.map((post: { body: string }) => post.body)).toEqual(['Leo profile post'])
+    expect(posts.body.items.map((post: { body: string }) => post.body)).toEqual([
+      'Leo profile post',
+    ])
   })
 
   it('follows and unfollows users while updating profile state and timeline scope', async () => {
@@ -296,13 +277,17 @@ describe('profiles and follows', () => {
 
     await mina.agent.post(`/users/${leo.user.id}/follow`).expect(200)
     let timeline = await mina.agent.get('/timeline').expect(200)
-    expect(timeline.body.items.map((post: { body: string }) => post.body)).toContain('Only visible while followed')
+    expect(timeline.body.items.map((post: { body: string }) => post.body)).toContain(
+      'Only visible while followed',
+    )
 
     const unfollow = await mina.agent.delete(`/users/${leo.user.id}/follow`).expect(200)
     timeline = await mina.agent.get('/timeline').expect(200)
 
     expect(unfollow.body.user.followedByMe).toBe(false)
-    expect(timeline.body.items.map((post: { body: string }) => post.body)).not.toContain('Only visible while followed')
+    expect(timeline.body.items.map((post: { body: string }) => post.body)).not.toContain(
+      'Only visible while followed',
+    )
   })
 
   it('rejects self-follow and missing users', async () => {
@@ -329,7 +314,9 @@ describe('profiles and follows', () => {
     }
 
     const firstPage = await request(testApp.app).get('/users/leo/posts').expect(200)
-    const secondPage = await request(testApp.app).get(`/users/leo/posts?cursor=${firstPage.body.nextCursor}`).expect(200)
+    const secondPage = await request(testApp.app)
+      .get(`/users/leo/posts?cursor=${firstPage.body.nextCursor}`)
+      .expect(200)
 
     expect(firstPage.body.items).toHaveLength(20)
     expect(firstPage.body.nextCursor).toEqual(expect.any(String))

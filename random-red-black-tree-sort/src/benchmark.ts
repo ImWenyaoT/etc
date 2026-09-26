@@ -3,9 +3,6 @@ export interface TimedResult<T> {
   readonly elapsedMs: number
 }
 
-/**
- * Runs a function and measures its elapsed wall-clock time in milliseconds.
- */
 export const time = <T>(operation: () => T): TimedResult<T> => {
   const start = performance.now()
   const value = operation()
@@ -13,12 +10,8 @@ export const time = <T>(operation: () => T): TimedResult<T> => {
 
   return {
     value,
-    elapsedMs
+    elapsedMs,
   }
 }
 
-/**
- * Formats a millisecond value for compact CLI output.
- */
-export const formatMs = (elapsedMs: number): string =>
-  `${elapsedMs.toFixed(2)}ms`
+export const formatMs = (elapsedMs: number): string => `${elapsedMs.toFixed(2)}ms`
