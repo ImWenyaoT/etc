@@ -16,12 +16,9 @@ const keyActionMap: Record<string, InputAction> = {
   d: 'move-right',
   D: 'move-right',
   ' ': 'pause',
-  Enter: 'start'
+  Enter: 'start',
 }
 
-/**
- * 注册键盘输入，并把物理按键映射为稳定游戏动作。
- */
 export function bindKeyboardControls(onAction: ActionHandler): () => void {
   const handleKeyDown = (event: KeyboardEvent) => {
     const action = keyActionMap[event.key]
@@ -39,14 +36,11 @@ export function bindKeyboardControls(onAction: ActionHandler): () => void {
   return () => window.removeEventListener('keydown', handleKeyDown)
 }
 
-/**
- * 注册触控/按钮输入，并统一派发成游戏动作。
- */
 export function bindButtonControls(root: Document, onAction: ActionHandler): () => void {
   const controls = [
     { selector: '#start-button', action: 'start' },
     { selector: '#pause-button', action: 'pause' },
-    { selector: '#restart-button', action: 'restart' }
+    { selector: '#restart-button', action: 'restart' },
   ] satisfies Array<{ selector: string; action: InputAction }>
 
   const buttonHandlers = controls.map(({ selector, action }) => {

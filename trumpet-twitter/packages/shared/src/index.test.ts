@@ -6,15 +6,12 @@ import {
   loginBodySchema,
   postParamsSchema,
   registerBodySchema,
-  userParamsSchema
+  userParamsSchema,
 } from './index.js'
 
 describe('shared schemas', () => {
-  it('normalizes valid handles to lowercase', () => {
+  it('normalizes valid handles and rejects unsafe ones', () => {
     expect(handleSchema.parse('mina_123')).toBe('mina_123')
-  })
-
-  it('rejects unsafe handles', () => {
     expect(() => handleSchema.parse('Mina')).toThrow()
     expect(() => handleSchema.parse('Mi Na')).toThrow()
     expect(() => handleSchema.parse('ab')).toThrow()
@@ -23,16 +20,20 @@ describe('shared schemas', () => {
   })
 
   it('validates registration and login bodies', () => {
-    expect(registerBodySchema.parse({
-      handle: 'mina',
-      displayName: 'Mina Chen',
-      password: 'password123'
-    }).handle).toBe('mina')
+    expect(
+      registerBodySchema.parse({
+        handle: 'mina',
+        displayName: 'Mina Chen',
+        password: 'password123',
+      }).handle,
+    ).toBe('mina')
 
-    expect(loginBodySchema.parse({
-      handle: 'mina',
-      password: 'password123'
-    }).handle).toBe('mina')
+    expect(
+      loginBodySchema.parse({
+        handle: 'mina',
+        password: 'password123',
+      }).handle,
+    ).toBe('mina')
   })
 
   it('trims posts and enforces text limits', () => {

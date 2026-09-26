@@ -1,8 +1,5 @@
 import type Database from 'better-sqlite3'
 
-/**
- * Creates every table and index needed by the first version of the app.
- */
 export const runMigrations = (sqlite: Database.Database) => {
   sqlite.exec(`
     PRAGMA foreign_keys = ON;

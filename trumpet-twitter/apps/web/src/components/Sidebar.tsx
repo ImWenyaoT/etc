@@ -8,9 +8,6 @@ interface SidebarProps {
   onLogout: () => void
 }
 
-/**
- * Renders the persistent product navigation rail.
- */
 export const Sidebar = ({ user, onHome, onProfile, onLogout }: SidebarProps) => (
   <aside className="sidebar">
     <div>

@@ -1,9 +1,6 @@
 import { ParserError } from './errors.js'
 import type { SerializableObject, SerializableValue } from './types.js'
 
-/**
- * Converts parser output into a JSON-serializable value or rejects unsupported values.
- */
 export function toSerializableValue(value: unknown, path = 'value'): SerializableValue {
   if (value === null || value === undefined) {
     return null

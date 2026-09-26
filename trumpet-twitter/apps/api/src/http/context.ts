@@ -3,7 +3,7 @@ import type { StoredUser } from '../repositories/types.js'
 import { HttpError } from './errors.js'
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
+  // oxlint-disable-next-line typescript/no-namespace -- Express request augmentation
   namespace Express {
     interface Request {
       currentUser: StoredUser | null
@@ -11,9 +11,6 @@ declare global {
   }
 }
 
-/**
- * Requires a request to already have an authenticated user.
- */
 export const requireAuth = (request: Request, _response: Response, next: NextFunction) => {
   if (!request.currentUser) {
     return next(new HttpError('unauthorized', '请先登录', 401))

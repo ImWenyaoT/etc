@@ -1,29 +1,32 @@
 {
   "name": "random-red-black-tree-sort",
   "version": "1.0.0",
+  "private": true,
   "description": "A TypeScript red-black tree that sorts 10,000 randomly inserted elements.",
   "license": "MIT",
   "type": "module",
-  "private": true,
-  "packageManager": "pnpm@11.9.0",
   "scripts": {
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "start": "tsx src/index.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint src test",
-    "check": "pnpm typecheck && pnpm test"
+    "lint": "oxlint . && oxfmt --check .",
+    "check": "pnpm typecheck && pnpm test",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check ."
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/node": "^26.0.1",
-    "@vitest/coverage-v8": "^4.1.9",
-    "eslint": "^10.6.0",
-    "globals": "^17.7.0",
-    "tsx": "^4.22.4",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.62.1",
-    "vitest": "^4.1.9"
-  }
+    "@types/node": "^24.19.0",
+    "@vitest/coverage-v8": "^5.0.2",
+    "oxfmt": "^0.70.0",
+    "oxlint": "^1.85.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.2"
+  },
+  "engines": {
+    "node": ">=24.15.0"
+  },
+  "packageManager": "pnpm@12.6.0"
 }

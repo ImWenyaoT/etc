@@ -1,3 +1,5 @@
 # 允许原生依赖运行安装/构建脚本（pnpm 11 从这里读）。
 allowBuilds:
   esbuild: true
+minimumReleaseAgeExclude:
+  - '@types/node@24.19.0'

@@ -12,19 +12,16 @@ const xmlParser = new XMLParser({
   trimValues: true,
   ignoreDeclaration: true,
   ignorePiTags: true,
-  allowBooleanAttributes: false
+  allowBooleanAttributes: false,
 })
 
-/**
- * Parses an XML document into a stable JSON-serializable object shape.
- */
 export function parseXml(source: string): unknown {
   const validation = XMLValidator.validate(source)
 
   if (validation !== true) {
     const { msg, line, col } = validation.err
     throw new ParserError(`Failed to parse XML: ${msg} at line ${line}, column ${col}.`, {
-      format: 'xml'
+      format: 'xml',
     })
   }
 

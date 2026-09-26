@@ -15,9 +15,6 @@ export interface UserStats {
   followedByMe: boolean
 }
 
-/**
- * Converts a stored user row into the public user shape returned by the API.
- */
 export const toUserView = (user: StoredUser, stats?: Partial<UserStats>): UserView => ({
   id: user.id,
   handle: user.handle,
@@ -26,5 +23,5 @@ export const toUserView = (user: StoredUser, stats?: Partial<UserStats>): UserVi
   createdAt: user.createdAt,
   ...(stats?.followedByMe === undefined ? {} : { followedByMe: stats.followedByMe }),
   ...(stats?.followerCount === undefined ? {} : { followerCount: stats.followerCount }),
-  ...(stats?.followingCount === undefined ? {} : { followingCount: stats.followingCount })
+  ...(stats?.followingCount === undefined ? {} : { followingCount: stats.followingCount }),
 })

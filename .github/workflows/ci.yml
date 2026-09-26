@@ -21,7 +21,6 @@ jobs:
           - random-red-black-tree-sort
           - web-front-end-snake-game
           - trumpet-twitter
-          - ai-article-summarizer
     defaults:
       run:
         working-directory: ${{ matrix.project }}
@@ -36,6 +35,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
+          # Active LTS (Krypton); matches engines.node >=24.15.0 across templates.
           node-version: 24
           cache: pnpm
           cache-dependency-path: ${{ matrix.project }}/pnpm-lock.yaml

@@ -1,8 +1,5 @@
 import { formatDemoResult, runDemo } from './demo.js'
 
-/**
- * Runs the random insertion red-black tree sorting demo.
- */
 const main = (): void => {
   const result = runDemo()
 

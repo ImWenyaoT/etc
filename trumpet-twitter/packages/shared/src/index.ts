@@ -10,29 +10,29 @@ export const handleSchema = z
 export const registerBodySchema = z.object({
   handle: handleSchema,
   displayName: z.string().min(1).max(80),
-  password: z.string().min(8).max(120)
+  password: z.string().min(8).max(120),
 })
 
 export const loginBodySchema = z.object({
   handle: handleSchema,
-  password: z.string().min(8).max(120)
+  password: z.string().min(8).max(120),
 })
 
 export const createPostBodySchema = z.object({
   body: z.string().trim().min(1).max(280),
-  parentId: z.uuid().nullable().optional()
+  parentId: z.uuid().nullable().optional(),
 })
 
 export const followParamsSchema = z.object({
-  id: z.uuid()
+  id: z.uuid(),
 })
 
 export const userParamsSchema = z.object({
-  handle: handleSchema
+  handle: handleSchema,
 })
 
 export const postParamsSchema = z.object({
-  id: z.uuid()
+  id: z.uuid(),
 })
 
 export type RegisterBody = z.infer<typeof registerBodySchema>

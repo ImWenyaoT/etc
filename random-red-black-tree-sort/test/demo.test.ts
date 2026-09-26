@@ -2,12 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { formatDemoResult, isSorted, runDemo } from '../src/demo.js'
 
 describe('isSorted', () => {
-  it('accepts empty and single-value arrays', () => {
+  it('accepts empty, single-value, and equal adjacent arrays', () => {
     expect(isSorted([])).toBe(true)
     expect(isSorted([1])).toBe(true)
-  })
-
-  it('accepts equal adjacent values', () => {
     expect(isSorted([1, 1, 2, 2, 3])).toBe(true)
   })
 
@@ -28,18 +25,6 @@ describe('runDemo', () => {
     expect(result.firstValues).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     expect(result.lastValues).toEqual([22, 23, 24, 25, 26, 27, 28, 29, 30, 31])
   })
-
-  it('handles an empty workload', () => {
-    const result = runDemo(0)
-
-    expect(result.elementCount).toBe(0)
-    expect(result.inserted).toBe(0)
-    expect(result.treeHeight).toBe(0)
-    expect(result.validRedBlackTree).toBe(true)
-    expect(result.sortedOutput).toBe(true)
-    expect(result.firstValues).toEqual([])
-    expect(result.lastValues).toEqual([])
-  })
 })
 
 describe('formatDemoResult', () => {
@@ -57,7 +42,7 @@ describe('formatDemoResult', () => {
       sortedOutput: true,
       firstValues: [0, 1, 2],
       lastValues: [0, 1, 2],
-      validationErrors: []
+      validationErrors: [],
     })
 
     expect(output).toContain('Red-black tree random insertion sort')

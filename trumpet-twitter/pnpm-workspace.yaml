@@ -7,3 +7,10 @@ packages:
 allowBuilds:
   better-sqlite3: true
   esbuild: true
+
+minimumReleaseAgeExclude:
+  - '@types/node@24.19.0'
+
+# jsdom@30 / @asamuzakjp/css-color want ^4.0.1; default resolution can stick on 4.0.0.
+overrides:
+  '@csstools/css-parser-algorithms': '^4.0.1'

@@ -13,16 +13,18 @@ export class HttpError extends Error {
   }
 }
 
-/**
- * Sends a consistent JSON error response for known and unexpected failures.
- */
-export const errorHandler = (error: unknown, _request: Request, response: Response, _next: NextFunction) => {
+export const errorHandler = (
+  error: unknown,
+  _request: Request,
+  response: Response,
+  _next: NextFunction,
+) => {
   if (error instanceof ZodError) {
     return response.status(400).json({
       error: {
         code: 'validation_error',
-        message: error.issues[0]?.message ?? '请求格式不正确'
-      }
+        message: error.issues[0]?.message ?? '请求格式不正确',
+      },
     })
   }
 
@@ -30,8 +32,8 @@ export const errorHandler = (error: unknown, _request: Request, response: Respon
     return response.status(error.status).json({
       error: {
         code: error.code,
-        message: error.message
-      }
+        message: error.message,
+      },
     })
   }
 
@@ -40,7 +42,7 @@ export const errorHandler = (error: unknown, _request: Request, response: Respon
   return response.status(500).json({
     error: {
       code: 'internal_error',
-      message: '服务暂时不可用'
-    }
+      message: '服务暂时不可用',
+    },
   })
 }
