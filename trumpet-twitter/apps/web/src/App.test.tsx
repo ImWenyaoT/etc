@@ -111,6 +111,20 @@ describe('App authentication', () => {
     expect(screen.queryByRole('heading', { name: 'Following' })).not.toBeInTheDocument()
   })
 
+  it('keeps the authenticated shell when the timeline fails after /me succeeds', async () => {
+    apiMock.me.mockResolvedValue({ user: mina })
+    apiMock.timeline.mockRejectedValue(new Error('时间线不可用'))
+
+    render(<App />)
+
+    expect(await screen.findByRole('heading', { name: 'Following' })).toBeInTheDocument()
+    expect(await screen.findByText('时间线不可用')).toBeInTheDocument()
+    expect(screen.getByText('时间线不可用')).toHaveClass('error-banner')
+    expect(
+      screen.queryByRole('heading', { name: '用一个小号 Twitter 练完整全栈闭环' }),
+    ).not.toBeInTheDocument()
+  })
+
   it('registers a new account and then boots the authenticated timeline', async () => {
     const user = userEvent.setup()
     apiMock.me.mockResolvedValueOnce({ user: null }).mockResolvedValueOnce({ user: mina })
@@ -308,6 +322,23 @@ describe('App profile interactions', () => {
     await user.click(screen.getByRole('button', { name: 'Unfollow' }))
     expect(await screen.findByRole('button', { name: 'Follow' })).toBeInTheDocument()
     expect(apiMock.unfollow).toHaveBeenCalledWith('user-leo')
+  })
+
+  it('returns home from a profile without clearing the timeline', async () => {
+    const user = userEvent.setup()
+    apiMock.me.mockResolvedValue({ user: mina })
+    apiMock.timeline.mockResolvedValue(
+      timelineFixture([postFixture({ body: 'Still on the timeline' })]),
+    )
+    apiMock.userPosts.mockResolvedValue(userPostsFixture(leo, []))
+
+    render(<App />)
+    await openLeoSuggestion(user)
+    expect(await screen.findByRole('heading', { name: 'Leo Park' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '返回' }))
+
+    expect(await screen.findByRole('heading', { name: 'Following' })).toBeInTheDocument()
+    expect(screen.getByText('Still on the timeline')).toBeInTheDocument()
   })
 
   it('shows profile loading errors when user lookup fails', async () => {
