@@ -35,53 +35,44 @@ const requestJson = async <T>(path: string, options: RequestInit = {}): Promise<
   return response.json() as Promise<T>
 }
 
+const cursorPath = (path: string, cursor?: string | null) =>
+  cursor ? `${path}?cursor=${encodeURIComponent(cursor)}` : path
+
+const getJson = <T>(path: string) => requestJson<T>(path)
+
+const postJson = <T>(path: string, body?: unknown) =>
+  requestJson<T>(path, {
+    method: 'POST',
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  })
+
+const deleteJson = <T>(path: string) => requestJson<T>(path, { method: 'DELETE' })
+
 export const api = {
-  register: (input: { handle: string; displayName: string; password: string }) => {
-    return requestJson<AuthResponse>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(input),
-    })
-  },
+  register: (input: { handle: string; displayName: string; password: string }) =>
+    postJson<AuthResponse>('/auth/register', input),
 
-  login: (input: { handle: string; password: string }) => {
-    return requestJson<AuthResponse>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(input),
-    })
-  },
+  login: (input: { handle: string; password: string }) =>
+    postJson<AuthResponse>('/auth/login', input),
 
-  logout: () => requestJson<void>('/auth/logout', { method: 'POST' }),
+  logout: () => postJson<void>('/auth/logout'),
 
-  me: () => requestJson<MeResponse>('/me'),
+  me: () => getJson<MeResponse>('/me'),
 
-  timeline: (cursor?: string | null) => {
-    const suffix = cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''
-    return requestJson<TimelineResponse>(`/timeline${suffix}`)
-  },
+  timeline: (cursor?: string | null) => getJson<TimelineResponse>(cursorPath('/timeline', cursor)),
 
-  createPost: (input: CreatePostBody) => {
-    return requestJson<{ post: PostView }>('/posts', {
-      method: 'POST',
-      body: JSON.stringify(input),
-    })
-  },
+  createPost: (input: CreatePostBody) => postJson<{ post: PostView }>('/posts', input),
 
-  likePost: (id: string) =>
-    requestJson<{ post: PostView }>(`/posts/${id}/like`, { method: 'POST' }),
+  likePost: (id: string) => postJson<{ post: PostView }>(`/posts/${id}/like`),
 
-  unlikePost: (id: string) =>
-    requestJson<{ post: PostView }>(`/posts/${id}/like`, { method: 'DELETE' }),
+  unlikePost: (id: string) => deleteJson<{ post: PostView }>(`/posts/${id}/like`),
 
-  user: (handle: string) => requestJson<{ user: UserView }>(`/users/${handle}`),
+  user: (handle: string) => getJson<{ user: UserView }>(`/users/${handle}`),
 
-  userPosts: (handle: string, cursor?: string | null) => {
-    const suffix = cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''
-    return requestJson<UserPostsResponse>(`/users/${handle}/posts${suffix}`)
-  },
+  userPosts: (handle: string, cursor?: string | null) =>
+    getJson<UserPostsResponse>(cursorPath(`/users/${handle}/posts`, cursor)),
 
-  follow: (id: string) =>
-    requestJson<{ user: UserView }>(`/users/${id}/follow`, { method: 'POST' }),
+  follow: (id: string) => postJson<{ user: UserView }>(`/users/${id}/follow`),
 
-  unfollow: (id: string) =>
-    requestJson<{ user: UserView }>(`/users/${id}/follow`, { method: 'DELETE' }),
+  unfollow: (id: string) => deleteJson<{ user: UserView }>(`/users/${id}/follow`),
 }

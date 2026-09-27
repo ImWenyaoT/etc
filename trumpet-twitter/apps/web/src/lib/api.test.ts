@@ -38,17 +38,30 @@ describe('api client', () => {
     })
   })
 
-  it('encodes timeline cursors in query strings', async () => {
+  it('encodes timeline cursors and omits the query when the cursor is empty', async () => {
     fetchMock.mockResolvedValue(response(200, { items: [], nextCursor: null }))
 
     await api.timeline('cursor with spaces')
+    await api.timeline()
+    await api.timeline(null)
 
-    expect(fetchMock).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
       'http://localhost:4000/timeline?cursor=cursor%20with%20spaces',
       expect.objectContaining({
         cache: 'no-store',
         credentials: 'include',
       }),
+    )
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:4000/timeline',
+      expect.objectContaining({ credentials: 'include' }),
+    )
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://localhost:4000/timeline',
+      expect.objectContaining({ credentials: 'include' }),
     )
   })
 

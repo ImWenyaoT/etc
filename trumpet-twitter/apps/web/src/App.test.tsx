@@ -310,6 +310,23 @@ describe('App profile interactions', () => {
     expect(apiMock.unfollow).toHaveBeenCalledWith('user-leo')
   })
 
+  it('returns home from a profile without clearing the timeline', async () => {
+    const user = userEvent.setup()
+    apiMock.me.mockResolvedValue({ user: mina })
+    apiMock.timeline.mockResolvedValue(
+      timelineFixture([postFixture({ body: 'Still on the timeline' })]),
+    )
+    apiMock.userPosts.mockResolvedValue(userPostsFixture(leo, []))
+
+    render(<App />)
+    await openLeoSuggestion(user)
+    expect(await screen.findByRole('heading', { name: 'Leo Park' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '返回' }))
+
+    expect(await screen.findByRole('heading', { name: 'Following' })).toBeInTheDocument()
+    expect(screen.getByText('Still on the timeline')).toBeInTheDocument()
+  })
+
   it('shows profile loading errors when user lookup fails', async () => {
     const user = userEvent.setup()
     apiMock.me.mockResolvedValue({ user: mina })
