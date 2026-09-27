@@ -24,15 +24,21 @@ export function parseData(source: string, options: ParseOptions = {}): Serializa
   return parseDocument(source, options).data
 }
 
+const formatParsers = {
+  json: parseJson,
+  yaml: parseYaml,
+  xml: parseXml,
+} satisfies Record<DataFormat, (source: string) => unknown>
+
 function parseByFormat(source: string, format: DataFormat): unknown {
-  switch (format) {
-    case 'json':
-      return parseJson(source)
-    case 'yaml':
-      return parseYaml(source)
-    case 'xml':
-      return parseXml(source)
-    default:
-      throw new ParserError(`Unsupported format "${format}".`)
-  }
+  if (hasFormatParser(format)) return formatParsers[format](source)
+  return rejectUnsupportedFormat(format)
+}
+
+function hasFormatParser(format: DataFormat): format is keyof typeof formatParsers {
+  return Object.hasOwn(formatParsers, format)
+}
+
+function rejectUnsupportedFormat(format: never): never {
+  throw new ParserError(`Unsupported format "${format}".`)
 }

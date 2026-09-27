@@ -1,5 +1,5 @@
 import { nextRandom } from './random'
-import type { Direction, GameConfig, GameState, InputAction, Point } from './types'
+import type { Direction, GameConfig, GameState, GameStatus, InputAction, Point } from './types'
 
 const directionVectors: Record<Direction, Point> = {
   up: { x: 0, y: -1 },
@@ -8,12 +8,38 @@ const directionVectors: Record<Direction, Point> = {
   right: { x: 1, y: 0 },
 }
 
-const actionDirections: Partial<Record<InputAction, Direction>> = {
-  'move-up': 'up',
-  'move-down': 'down',
-  'move-left': 'left',
-  'move-right': 'right',
+type ActionHandler = (state: GameState, config: GameConfig) => GameState
+
+interface StatusTransition {
+  status: GameStatus
+  event: 'started' | 'paused' | 'resumed'
+  reset?: true
 }
+
+const startTransitions = {
+  idle: { status: 'running', event: 'started', reset: true },
+  paused: { status: 'running', event: 'resumed' },
+  'game-over': { status: 'running', event: 'started', reset: true },
+} satisfies Partial<Record<GameStatus, StatusTransition>>
+
+const pauseTransitions = {
+  running: { status: 'paused', event: 'paused' },
+  paused: { status: 'running', event: 'resumed' },
+} satisfies Partial<Record<GameStatus, StatusTransition>>
+
+const actionHandlers = {
+  start: (state, config) => applyStatusTransition(state, config, startTransitions),
+  pause: (state, config) => applyStatusTransition(state, config, pauseTransitions),
+  restart: (state, config) => ({
+    ...createInitialState(config, state.bestScore),
+    status: 'running',
+    event: { type: 'restarted' },
+  }),
+  'move-up': (state) => queueDirection(state, 'up'),
+  'move-down': (state) => queueDirection(state, 'down'),
+  'move-left': (state) => queueDirection(state, 'left'),
+  'move-right': (state) => queueDirection(state, 'right'),
+} satisfies Record<InputAction, ActionHandler>
 
 export function createInitialState(config: GameConfig, bestScore = 0): GameState {
   const snake = createInitialSnake(config)
@@ -32,36 +58,22 @@ export function createInitialState(config: GameConfig, bestScore = 0): GameState
 }
 
 export function reduceAction(state: GameState, action: InputAction, config: GameConfig): GameState {
-  if (action === 'restart') {
-    return {
-      ...createInitialState(config, state.bestScore),
-      status: 'running',
-      event: { type: 'restarted' },
-    }
-  }
-  if (action === 'start') {
-    if (state.status === 'idle' || state.status === 'game-over') {
-      return {
-        ...createInitialState(config, state.bestScore),
-        status: 'running',
-        event: { type: 'started' },
-      }
-    }
-    if (state.status === 'paused') {
-      return { ...state, status: 'running', event: { type: 'resumed' } }
-    }
-  }
-  if (action === 'pause') {
-    if (state.status === 'running') return { ...state, status: 'paused', event: { type: 'paused' } }
-    if (state.status === 'paused')
-      return { ...state, status: 'running', event: { type: 'resumed' } }
-  }
-  const nextDirection = actionDirections[action]
-  if (
-    !nextDirection ||
-    state.status === 'game-over' ||
-    isOppositeDirection(state.direction, nextDirection)
-  ) {
+  return actionHandlers[action](state, config)
+}
+
+function applyStatusTransition(
+  state: GameState,
+  config: GameConfig,
+  transitions: Partial<Record<GameStatus, StatusTransition>>,
+): GameState {
+  const transition = transitions[state.status]
+  if (!transition) return state
+  const base = transition.reset ? createInitialState(config, state.bestScore) : state
+  return { ...base, status: transition.status, event: { type: transition.event } }
+}
+
+function queueDirection(state: GameState, nextDirection: Direction): GameState {
+  if (state.status === 'game-over' || isOppositeDirection(state.direction, nextDirection)) {
     return state
   }
   return { ...state, pendingDirection: nextDirection, event: { type: 'none' } }
@@ -114,11 +126,11 @@ export function stepGame(state: GameState, config: GameConfig): GameState {
   }
 }
 
-export const isOppositeDirection = (current: Direction, next: Direction) =>
-  (current === 'up' && next === 'down') ||
-  (current === 'down' && next === 'up') ||
-  (current === 'left' && next === 'right') ||
-  (current === 'right' && next === 'left')
+export const isOppositeDirection = (current: Direction, next: Direction) => {
+  const currentVector = directionVectors[current]
+  const nextVector = directionVectors[next]
+  return currentVector.x + nextVector.x === 0 && currentVector.y + nextVector.y === 0
+}
 
 export const pointsAreEqual = (a: Point, b: Point) => a.x === b.x && a.y === b.y
 
