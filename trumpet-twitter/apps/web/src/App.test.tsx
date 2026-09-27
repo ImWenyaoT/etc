@@ -111,6 +111,20 @@ describe('App authentication', () => {
     expect(screen.queryByRole('heading', { name: 'Following' })).not.toBeInTheDocument()
   })
 
+  it('keeps the authenticated shell when the timeline fails after /me succeeds', async () => {
+    apiMock.me.mockResolvedValue({ user: mina })
+    apiMock.timeline.mockRejectedValue(new Error('时间线不可用'))
+
+    render(<App />)
+
+    expect(await screen.findByRole('heading', { name: 'Following' })).toBeInTheDocument()
+    expect(await screen.findByText('时间线不可用')).toBeInTheDocument()
+    expect(screen.getByText('时间线不可用')).toHaveClass('error-banner')
+    expect(
+      screen.queryByRole('heading', { name: '用一个小号 Twitter 练完整全栈闭环' }),
+    ).not.toBeInTheDocument()
+  })
+
   it('registers a new account and then boots the authenticated timeline', async () => {
     const user = userEvent.setup()
     apiMock.me.mockResolvedValueOnce({ user: null }).mockResolvedValueOnce({ user: mina })

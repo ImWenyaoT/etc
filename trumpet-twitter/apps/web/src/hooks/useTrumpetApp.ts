@@ -24,13 +24,24 @@ export const useTrumpetApp = () => {
         dispatch({ type: 'session-empty' })
         return
       }
-      const timeline = await api.timeline()
+      // Commit the session as soon as /me succeeds so a timeline failure
+      // still leaves the authenticated shell (and error banner) visible.
       dispatch({
         type: 'session-ready',
         user: me.user,
-        posts: timeline.items,
-        nextCursor: timeline.nextCursor,
+        posts: [],
+        nextCursor: null,
       })
+      try {
+        const timeline = await api.timeline()
+        dispatch({
+          type: 'timeline-replaced',
+          posts: timeline.items,
+          nextCursor: timeline.nextCursor,
+        })
+      } catch (cause) {
+        report(cause, '启动失败')
+      }
     } catch (cause) {
       report(cause, '启动失败')
     } finally {

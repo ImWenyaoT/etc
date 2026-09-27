@@ -83,6 +83,23 @@ describe('reduceTrumpet', () => {
     })
   })
 
+  it('keeps the user when session is ready before the timeline arrives', () => {
+    const authenticated = reduce([
+      { type: 'boot-started' },
+      { type: 'session-ready', user: mina, posts: [], nextCursor: null },
+      { type: 'error-reported', error: '启动失败' },
+      { type: 'loading-changed', loading: false },
+    ])
+
+    expect(authenticated).toMatchObject({
+      user: mina,
+      posts: [],
+      error: '启动失败',
+      loading: false,
+      view: { name: 'home' },
+    })
+  })
+
   it('prepends, appends, replaces, and patches posts in both feeds', () => {
     const first = post('post-1')
     const liked = post('post-1', { likedByMe: true, likeCount: 1 })
