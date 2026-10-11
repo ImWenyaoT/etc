@@ -28,7 +28,7 @@ make build
 
 ## 功能与接口
 
-Go 库提供 `Files(Options)`；CLI 保留 `search <keyword> --root <directory> --max <number>`，也支持 `-r`、`-m`。匹配不区分大小写，按目录字典序遍历，忽略 `.git`、`node_modules`、`dist`、`coverage`，不跟随符号链接。根目录错误返回失败，子目录访问错误跳过。
+Go 库提供 `Files(ctx, Options)`；CLI 保留 `search <keyword> --root <directory> --max <number>`，也支持 `-r`、`-m`。匹配不区分大小写，按目录字典序遍历，忽略 `.git`、`node_modules`、`dist`、`coverage`，不跟随符号链接。根目录或子目录读取失败均返回错误，不返回部分结果；`errors.Is(err, search.ErrIncomplete)` 可识别遍历失败。请求取消会停止遍历。
 
 ```sh
 go run ./cmd/file-search search readme --root . --max 20

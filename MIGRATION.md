@@ -28,3 +28,14 @@ Go 模块路径使用 `github.com/ImWenyaoT/etc/<项目>`，根目录添加 `go.
 ## Tailwind 与 shadcn/ui
 
 五个 `web/` 均使用 Tailwind CSS v4 官方 Vite 插件和 shadcn/ui 的 Base UI 组件源码。组件位于 `src/components/ui/`，页面通过 Tailwind 布局类和语义化 CSS 变量组合界面；已移除旧的通用按钮、输入框与卡片 CSS。各项目保留独立的 `components.json`、npm 锁文件和主题。解析格式和登录/注册模式使用 ToggleGroup；表单标签、错误关联、焦点状态及加载反馈由对应组件提供。
+
+## Go Interface 整理
+
+HTTP 路径、正常响应字段、默认端口和用户操作保持不变。Go 调用者需要调整：
+
+- 文件搜索：`Files(ctx, Options)`，取消或目录读取失败时返回错误及空结果；子目录失败不再静默跳过。
+- 红黑树：公开计数字段改为 `Stats()` 返回的独立快照。
+- 文档转换：可用 `errors.Is` 分类格式和文档错误，原始错误仍在错误链中。
+- Trumpet：`Open(file, Config)` 显式注入配置，`SeedDemo(ctx)` 接收取消 Context。`WEB_ORIGIN` 必须是不含路径、凭据、查询或片段的 HTTP(S) origin；`COOKIE_SECURE` 接受 Go 的布尔值格式，拼写错误会阻止启动。
+
+这些 Interface 变更集中在本仓库 Go 调用者；远端下游 Go 使用者需同步调整。配置校验和子目录错误属于有意收紧的失败语义。

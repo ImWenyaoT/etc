@@ -1,22 +1,35 @@
+// Package parser normalizes one JSON, YAML or XML document into JSON-compatible
+// values. XML attributes use $attributes, text uses $text, and repeated sibling
+// tags become arrays. YAML mappings must have keys representable as JSON strings.
 package parser
 
 import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"io"
 	"path/filepath"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
+// ErrUnsupportedFormat identifies a missing or unsupported format.
+var ErrUnsupportedFormat = errors.New("unsupported format")
+
+// ErrInvalidDocument identifies content that cannot be represented as one document.
+var ErrInvalidDocument = errors.New("invalid document")
+
+// Result owns its decoded Data; SourcePath is metadata and is never opened by Parse.
 type Result struct {
 	Format     string `json:"format"`
 	Data       any    `json:"data"`
 	SourcePath string `json:"sourcePath,omitempty"`
 }
 
+// Detect uses an explicit format or the path extension; yml is normalized to yaml.
 func Detect(path, format string) (string, error) {
 	if format == "" {
 		format = strings.TrimPrefix(filepath.Ext(path), ".")
@@ -29,8 +42,12 @@ func Detect(path, format string) (string, error) {
 	case "json", "yaml", "xml":
 		return format, nil
 	}
-	return "", fmt.Errorf("unsupported or missing format: %q", format)
+	return "", fmt.Errorf("unsupported or missing format: %q: %w", format, ErrUnsupportedFormat)
 }
+
+// Parse decodes exactly one document. Empty YAML is null; empty JSON and XML
+// are invalid. XML directives and more than 256 nested elements are rejected.
+// Errors wrap ErrUnsupportedFormat or ErrInvalidDocument for callers to classify.
 func Parse(source, path, format string) (Result, error) {
 	f, e := Detect(path, format)
 	if e != nil {
@@ -49,7 +66,7 @@ func Parse(source, path, format string) (Result, error) {
 		if e == nil {
 			var extra any
 			if d.Decode(&extra) != io.EOF {
-				e = fmt.Errorf("multiple YAML documents are not supported")
+				e = errors.New("multiple YAML documents are not supported")
 			}
 		}
 		if e == nil {
@@ -63,7 +80,7 @@ func Parse(source, path, format string) (Result, error) {
 		data, e = parseXML(source)
 	}
 	if e != nil {
-		return Result{}, fmt.Errorf("failed to parse %s: %w", f, e)
+		return Result{}, fmt.Errorf("failed to parse %s: %w", f, errors.Join(ErrInvalidDocument, e))
 	}
 	return Result{f, data, path}, nil
 }
@@ -100,7 +117,7 @@ func parseXML(source string) (any, error) {
 		switch v := tok.(type) {
 		case xml.StartElement:
 			if len(stack) >= 256 {
-				return nil, fmt.Errorf("XML nesting limit exceeded")
+				return nil, errors.New("XML nesting limit exceeded")
 			}
 			n := &element{name: v.Name.Local, value: map[string]any{}}
 			if len(v.Attr) > 0 {
@@ -115,11 +132,11 @@ func parseXML(source string) (any, error) {
 			if len(stack) > 0 {
 				stack[len(stack)-1].text.Write(v)
 			} else if strings.TrimSpace(string(v)) != "" {
-				return nil, fmt.Errorf("text outside root")
+				return nil, errors.New("text outside root")
 			}
 		case xml.EndElement:
 			if len(stack) == 0 {
-				return nil, fmt.Errorf("unexpected end element")
+				return nil, errors.New("unexpected end element")
 			}
 			n := stack[len(stack)-1]
 			stack = stack[:len(stack)-1]
@@ -130,16 +147,16 @@ func parseXML(source string) (any, error) {
 				add(stack[len(stack)-1].value, n.name, n.value)
 			} else {
 				if root != nil {
-					return nil, fmt.Errorf("multiple roots")
+					return nil, errors.New("multiple roots")
 				}
 				root = map[string]any{n.name: n.value}
 			}
 		case xml.Directive:
-			return nil, fmt.Errorf("XML directives are not supported")
+			return nil, errors.New("XML directives are not supported")
 		}
 	}
 	if root == nil || len(stack) > 0 {
-		return nil, fmt.Errorf("missing or incomplete root")
+		return nil, errors.New("missing or incomplete root")
 	}
 	return root, nil
 }

@@ -1,13 +1,18 @@
+// Package search finds regular files by name without following symbolic links.
 package search
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
+// Options configures a case-insensitive substring search. Nil Ignored uses the
+// default directory exclusions; an empty slice disables those exclusions.
 type Options struct {
 	Root    string
 	Query   string
@@ -15,7 +20,17 @@ type Options struct {
 	Ignored []string
 }
 
-func Files(o Options) ([]string, error) {
+// ErrIncomplete reports a traversal failure. Results are discarded rather than
+// silently presenting an incomplete search as successful.
+var ErrIncomplete = errors.New("search incomplete")
+
+// Files returns absolute paths in lexical directory traversal order, stopping at
+// Max matches. An empty query returns an empty slice. It returns no results on
+// cancellation or a traversal failure; inspect errors.Is(err, ErrIncomplete).
+func Files(ctx context.Context, o Options) ([]string, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	root, e := filepath.Abs(o.Root)
 	if e != nil {
 		return nil, e
@@ -43,11 +58,11 @@ func Files(o Options) ([]string, error) {
 		ignored[s] = true
 	}
 	e = filepath.WalkDir(root, func(p string, d fs.DirEntry, e error) error {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		if e != nil {
-			if p == root {
-				return e
-			}
-			return nil
+			return fmt.Errorf("%w: %w", ErrIncomplete, e)
 		}
 		if d.IsDir() {
 			if p != root && ignored[d.Name()] {
@@ -63,5 +78,8 @@ func Files(o Options) ([]string, error) {
 		}
 		return nil
 	})
-	return result, e
+	if e != nil {
+		return nil, e
+	}
+	return result, nil
 }

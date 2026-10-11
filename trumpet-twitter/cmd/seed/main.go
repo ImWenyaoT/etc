@@ -1,9 +1,11 @@
 package main
 
 import (
-	"github.com/ImWenyaoT/etc/trumpet-twitter/internal/app"
+	"context"
 	"log"
 	"os"
+
+	"github.com/ImWenyaoT/etc/trumpet-twitter/internal/app"
 )
 
 func main() {
@@ -11,12 +13,12 @@ func main() {
 	if file == "" {
 		file = "data/trumpet.db"
 	}
-	a, e := app.Open(file)
+	a, e := app.Open(file, app.Config{})
 	if e != nil {
 		log.Fatal(e)
 	}
 	defer a.Close()
-	if e = a.SeedDemo(); e != nil {
+	if e = a.SeedDemo(context.Background()); e != nil {
 		log.Fatal(e)
 	}
 	log.Print("演示账号 mina / leo / ava，密码 password123")

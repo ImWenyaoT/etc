@@ -1,29 +1,52 @@
 package app
 
 import (
+	"context"
 	"database/sql"
 	_ "embed"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	_ "modernc.org/sqlite"
+	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	_ "modernc.org/sqlite"
 )
 
 //go:embed schema.sql
 var schema string
 
+// App owns its SQLite connection and HTTP routing; use it as an http.Handler.
 type App struct {
 	db      *sql.DB
 	handler http.Handler
-	secure  bool
+	config  Config
 }
 
-func Open(file string) (*App, error) {
+// Config is immutable after Open. WebOrigin, when set, is the browser origin
+// allowed to submit mutations; otherwise requests must match their HTTP host.
+// CookieSecure must be enabled when cookies are served over HTTPS.
+type Config struct {
+	CookieSecure bool
+	WebOrigin    string
+}
+
+// Open owns a SQLite connection and returns an HTTP handler. Call Close after
+// requests have drained. Configuration is explicit; environment variables are
+// read only by command entrypoints. An empty database is initialized on open.
+// Static files are served from web/dist relative to the process working directory.
+func Open(file string, config Config) (*App, error) {
+	if config.WebOrigin != "" {
+		u, err := url.Parse(config.WebOrigin)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" || u.User != nil || u.Path != "" || u.RawQuery != "" || u.Fragment != "" || u.ForceQuery {
+			return nil, errors.New("WEB_ORIGIN must be an HTTP(S) origin without a path, credentials, query or fragment")
+		}
+	}
 	if file != ":memory:" {
 		if e := os.MkdirAll(filepath.Dir(file), 0700); e != nil {
 			return nil, e
@@ -42,11 +65,15 @@ func Open(file string) (*App, error) {
 		db.Close()
 		return nil, e
 	}
-	a := &App{db: db, secure: os.Getenv("COOKIE_SECURE") == "true"}
+	a := &App{db: db, config: config}
 	a.routes()
 	return a, nil
 }
+
+// Close releases the owned database after active requests have drained.
 func (a *App) Close() error { return a.db.Close() }
+
+// ServeHTTP accepts paths with or without the /api prefix.
 func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(r.URL.Path, "/api/") {
 		r = r.Clone(r.Context())
@@ -81,28 +108,35 @@ type Page struct {
 	NextCursor *string `json:"nextCursor"`
 }
 
-func (a *App) user(column, value, viewer string) *User {
+func (a *App) user(ctx context.Context, column, value, viewer string) (*User, error) {
 	u := User{}
-	e := a.db.QueryRow("SELECT id,handle,display_name,bio,created_at FROM users WHERE "+column+"=?", value).Scan(&u.ID, &u.Handle, &u.DisplayName, &u.Bio, &u.CreatedAt)
+	e := a.db.QueryRowContext(ctx, "SELECT id,handle,display_name,bio,created_at FROM users WHERE "+column+"=?", value).Scan(&u.ID, &u.Handle, &u.DisplayName, &u.Bio, &u.CreatedAt)
 	if errors.Is(e, sql.ErrNoRows) {
-		return nil
+		return nil, nil
 	}
-	check(e)
-	check(a.db.QueryRow(`SELECT (SELECT count(*) FROM follows WHERE following_id=?),(SELECT count(*) FROM follows WHERE follower_id=?),EXISTS(SELECT 1 FROM follows WHERE follower_id=? AND following_id=?)`, u.ID, u.ID, viewer, u.ID).Scan(&u.FollowerCount, &u.FollowingCount, &u.FollowedByMe))
-	return &u
+	if e != nil {
+		return nil, fmt.Errorf("read user: %w", e)
+	}
+	if e = a.db.QueryRowContext(ctx, `SELECT (SELECT count(*) FROM follows WHERE following_id=?),(SELECT count(*) FROM follows WHERE follower_id=?),EXISTS(SELECT 1 FROM follows WHERE follower_id=? AND following_id=?)`, u.ID, u.ID, viewer, u.ID).Scan(&u.FollowerCount, &u.FollowingCount, &u.FollowedByMe); e != nil {
+		return nil, fmt.Errorf("read follows: %w", e)
+	}
+	return &u, nil
 }
-func (a *App) viewer(r *http.Request) string {
+func (a *App) viewer(r *http.Request) (string, error) {
+	ctx := r.Context()
 	c, e := r.Cookie("session_id")
 	if e != nil {
-		return ""
+		return "", nil
 	}
 	var id string
-	e = a.db.QueryRow("SELECT user_id FROM sessions WHERE id=? AND expires_at>?", c.Value, now()).Scan(&id)
+	e = a.db.QueryRowContext(ctx, "SELECT user_id FROM sessions WHERE id=? AND expires_at>?", c.Value, now()).Scan(&id)
 	if errors.Is(e, sql.ErrNoRows) {
-		return ""
+		return "", nil
 	}
-	check(e)
-	return id
+	if e != nil {
+		return "", fmt.Errorf("read session: %w", e)
+	}
+	return id, nil
 }
 
 const postSelect = `SELECT p.id,p.body,p.parent_id,p.created_at,u.id,u.handle,u.display_name,u.bio,u.created_at,(SELECT count(*) FROM likes WHERE post_id=p.id),(SELECT count(*) FROM posts WHERE parent_id=p.id),EXISTS(SELECT 1 FROM likes WHERE post_id=p.id AND user_id=?) FROM posts p JOIN users u ON u.id=p.author_id `
@@ -114,15 +148,17 @@ func scanPost(row scanner) (Post, error) {
 	e := row.Scan(&p.ID, &p.Body, &p.ParentID, &p.CreatedAt, &p.Author.ID, &p.Author.Handle, &p.Author.DisplayName, &p.Author.Bio, &p.Author.CreatedAt, &p.LikeCount, &p.ReplyCount, &p.LikedByMe)
 	return p, e
 }
-func (a *App) post(id, viewer string) *Post {
-	p, e := scanPost(a.db.QueryRow(postSelect+"WHERE p.id=?", viewer, id))
+func (a *App) post(ctx context.Context, id, viewer string) (*Post, error) {
+	p, e := scanPost(a.db.QueryRowContext(ctx, postSelect+"WHERE p.id=?", viewer, id))
 	if errors.Is(e, sql.ErrNoRows) {
-		return nil
+		return nil, nil
 	}
-	check(e)
-	return &p
+	if e != nil {
+		return nil, fmt.Errorf("read post: %w", e)
+	}
+	return &p, nil
 }
-func (a *App) page(viewer, author, cursor string) Page {
+func (a *App) page(ctx context.Context, viewer, author, cursor string) (Page, error) {
 	where := "p.parent_id IS NULL AND p.author_id=?"
 	args := []any{viewer, author}
 	if author == "" {
@@ -136,29 +172,37 @@ func (a *App) page(viewer, author, cursor string) Page {
 		}
 		b, e := base64.RawURLEncoding.DecodeString(cursor)
 		if e != nil || json.Unmarshal(b, &c) != nil || c.CreatedAt == "" || c.ID == "" {
-			fail(400, "invalid_cursor", "分页游标无效")
+			return Page{}, problem(400, "invalid_cursor", "分页游标无效")
 		}
 		where += " AND (p.created_at<? OR (p.created_at=? AND p.id<?))"
 		args = append(args, c.CreatedAt, c.CreatedAt, c.ID)
 	}
-	rows, e := a.db.Query(postSelect+"WHERE "+where+" ORDER BY p.created_at DESC,p.id DESC LIMIT 21", args...)
-	check(e)
+	rows, e := a.db.QueryContext(ctx, postSelect+"WHERE "+where+" ORDER BY p.created_at DESC,p.id DESC LIMIT 21", args...)
+	if e != nil {
+		return Page{}, fmt.Errorf("read timeline: %w", e)
+	}
 	defer rows.Close()
 	items := []Post{}
 	for rows.Next() {
 		p, e := scanPost(rows)
-		check(e)
+		if e != nil {
+			return Page{}, fmt.Errorf("read timeline: %w", e)
+		}
 		items = append(items, p)
 	}
-	check(rows.Err())
+	if e = rows.Err(); e != nil {
+		return Page{}, fmt.Errorf("iterate timeline: %w", e)
+	}
 	page := Page{Items: items}
 	if len(items) > 20 {
 		page.Items = items[:20]
 		p := page.Items[19]
 		b, e := json.Marshal(map[string]string{"createdAt": p.CreatedAt, "id": p.ID})
-		check(e)
+		if e != nil {
+			return Page{}, fmt.Errorf("read timeline: %w", e)
+		}
 		c := base64.RawURLEncoding.EncodeToString(b)
 		page.NextCursor = &c
 	}
-	return page
+	return page, nil
 }

@@ -17,3 +17,5 @@ go run ./cmd/data-parser parse input.txt --format xml
 ```
 
 网页使用 `POST /api/parse`，请求体为 `{"source":"name: Ada","format":"yaml"}`。XML 属性保存为 `$attributes`、文本为 `$text`、重复元素为数组。拒绝格式错误、多根 XML、DTD 指令、超过 256 层 XML 和多文档 YAML。YAML 映射键必须能转换为 JSON 对象键。请求体限制为 1 MiB。
+
+Go 调用者可通过 `errors.Is` 判断 `ErrUnsupportedFormat` 与 `ErrInvalidDocument`；原始解析错误仍保留在错误链中。XML 映射、空 YAML 与单文档限制见 `parser.Parse` 的 Go 文档。

@@ -1,7 +1,8 @@
+// Package rbtree implements a left-leaning red-black tree of unique integers.
 package rbtree
 
 import (
-	"fmt"
+	"errors"
 	"math/rand/v2"
 	"time"
 )
@@ -11,11 +12,25 @@ type node struct {
 	red         bool
 	left, right *node
 }
+
+// Tree is ready to use at its zero value. It is not safe for concurrent mutation.
 type Tree struct {
 	root       *node
+	insertions int
+	rotations  int
+	recolors   int
+}
+
+// Statistics is an independent snapshot; editing it does not change the tree.
+type Statistics struct {
 	Insertions int
 	Rotations  int
 	Recolors   int
+}
+
+// Stats reports insertions and the balancing work performed so far.
+func (t *Tree) Stats() Statistics {
+	return Statistics{Insertions: t.insertions, Rotations: t.rotations, Recolors: t.recolors}
 }
 
 func red(n *node) bool { return n != nil && n.red }
@@ -25,7 +40,7 @@ func (t *Tree) rotateLeft(h *node) *node {
 	x.left = h
 	x.red = h.red
 	h.red = true
-	t.Rotations++
+	t.rotations++
 	return x
 }
 func (t *Tree) rotateRight(h *node) *node {
@@ -34,7 +49,7 @@ func (t *Tree) rotateRight(h *node) *node {
 	x.right = h
 	x.red = h.red
 	h.red = true
-	t.Rotations++
+	t.rotations++
 	return x
 }
 func (t *Tree) insert(h *node, v int) (*node, bool) {
@@ -59,7 +74,7 @@ func (t *Tree) insert(h *node, v int) (*node, bool) {
 		h.red = !h.red
 		h.left.red = !h.left.red
 		h.right.red = !h.right.red
-		t.Recolors += 3
+		t.recolors += 3
 	}
 	return h, added
 }
@@ -70,13 +85,15 @@ func (t *Tree) Insert(v int) bool {
 	t.root, added = t.insert(t.root, v)
 	if red(t.root) {
 		t.root.red = false
-		t.Recolors++
+		t.recolors++
 	}
 	if added {
-		t.Insertions++
+		t.insertions++
 	}
 	return added
 }
+
+// Values returns a new slice containing every stored integer in ascending order.
 func (t *Tree) Values() []int {
 	values := []int{}
 	var walk func(*node)
@@ -91,9 +108,12 @@ func (t *Tree) Values() []int {
 	walk(t.root)
 	return values
 }
+
+// Validate checks ordering and red-black invariants, returning black height
+// (including the root and terminal nil node) and maximum non-nil depth.
 func (t *Tree) Validate() (int, int, error) {
 	if red(t.root) {
-		return 0, 0, fmt.Errorf("root is red")
+		return 0, 0, errors.New("root is red")
 	}
 	var check func(*node, *int, *int) (int, int, error)
 	check = func(n *node, lo, hi *int) (int, int, error) {
@@ -101,10 +121,10 @@ func (t *Tree) Validate() (int, int, error) {
 			return 1, 0, nil
 		}
 		if lo != nil && n.value <= *lo || hi != nil && n.value >= *hi {
-			return 0, 0, fmt.Errorf("invalid ordering")
+			return 0, 0, errors.New("invalid ordering")
 		}
 		if red(n) && (red(n.left) || red(n.right)) {
-			return 0, 0, fmt.Errorf("consecutive red nodes")
+			return 0, 0, errors.New("consecutive red nodes")
 		}
 		lb, lh, e := check(n.left, lo, &n.value)
 		if e != nil {
@@ -115,7 +135,7 @@ func (t *Tree) Validate() (int, int, error) {
 			return 0, 0, e
 		}
 		if lb != rb {
-			return 0, 0, fmt.Errorf("unequal black heights")
+			return 0, 0, errors.New("unequal black heights")
 		}
 		if !red(n) {
 			lb++
@@ -125,6 +145,7 @@ func (t *Tree) Validate() (int, int, error) {
 	return check(t.root, nil, nil)
 }
 
+// Result records a reproducible experiment, except for elapsed timings.
 type Result struct {
 	ElementCount    int      `json:"elementCount"`
 	Inserted        int      `json:"inserted"`
@@ -141,9 +162,11 @@ type Result struct {
 	Errors          []string `json:"validationErrors"`
 }
 
+// Demo shuffles unique integers using seed, inserts them, and checks the result.
+// Count must be between 1 and 1,000,000; timings include only the named operation.
 func Demo(count int, seed uint64) (Result, error) {
 	if count < 1 || count > 1000000 {
-		return Result{}, fmt.Errorf("count must be between 1 and 1000000")
+		return Result{}, errors.New("count must be between 1 and 1000000")
 	}
 	rng := rand.New(rand.NewPCG(seed, seed^0x9e3779b97f4a7c15))
 	order := rng.Perm(count)
@@ -168,5 +191,5 @@ func Demo(count int, seed uint64) (Result, error) {
 		}
 	}
 	n := min(10, count)
-	return Result{count, tree.Insertions, insert, traverse, height, tree.Rotations, tree.Recolors, e == nil, bh, sorted, values[:n], values[count-n:], errs}, nil
+	return Result{count, tree.insertions, insert, traverse, height, tree.rotations, tree.recolors, e == nil, bh, sorted, values[:n], values[count-n:], errs}, nil
 }

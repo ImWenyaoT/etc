@@ -1,7 +1,9 @@
+// Package scores stores the best 100 submitted scores in a single JSON file.
 package scores
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,16 +12,22 @@ import (
 	"sync"
 )
 
+// Score is a nonblank name of up to 40 runes and a multiple of ten from 0 to 5720.
 type Score struct {
 	Name  string `json:"name"`
 	Score int    `json:"score"`
 }
+
+// Store serializes concurrent calls within one process. Only one Store/process
+// may own a file; it does not provide cross-process locking or cheat detection.
 type Store struct {
 	mu    sync.Mutex
 	file  string
 	items []Score
 }
 
+// Open loads existing scores; a missing file starts an empty store. Invalid JSON
+// is an error and is never overwritten automatically.
 func Open(file string) (*Store, error) {
 	s := &Store{file: file, items: []Score{}}
 	b, e := os.ReadFile(file)
@@ -29,17 +37,27 @@ func Open(file string) (*Store, error) {
 	if os.IsNotExist(e) {
 		e = nil
 	}
-	return s, e
+	if e != nil {
+		return nil, fmt.Errorf("load scores: %w", e)
+	}
+	return s, nil
 }
+
+// List returns a copy; callers cannot mutate stored scores through it.
 func (s *Store) List() []Score {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return append([]Score{}, s.items...)
 }
+
+// Add trims the name, validates the score, and atomically replaces the file.
+// Equal scores preserve submission order. Memory changes only after the write
+// succeeds; failures leave the previous scores intact. The parent directory is
+// not fsynced, so this is atomic replacement, not a power-loss durability promise.
 func (s *Store) Add(v Score) error {
 	v.Name = strings.TrimSpace(v.Name)
 	if v.Name == "" || len([]rune(v.Name)) > 40 || v.Score < 0 || v.Score > 5720 || v.Score%10 != 0 {
-		return fmt.Errorf("昵称或得分有误，请检查。")
+		return errors.New("昵称或得分有误，请检查。")
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()

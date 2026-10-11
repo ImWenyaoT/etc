@@ -1,20 +1,22 @@
 package app
 
 import (
+	"context"
 	"fmt"
+
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // SeedDemo populates an empty database. Existing data is never deleted.
-func (a *App) SeedDemo() error {
-	tx, e := a.db.Begin()
+func (a *App) SeedDemo(ctx context.Context) error {
+	tx, e := a.db.BeginTx(ctx, nil)
 	if e != nil {
 		return e
 	}
 	defer tx.Rollback()
 	var count int
-	if e = tx.QueryRow("SELECT count(*) FROM users").Scan(&count); e != nil {
+	if e = tx.QueryRowContext(ctx, "SELECT count(*) FROM users").Scan(&count); e != nil {
 		return e
 	}
 	if count != 0 {
@@ -26,12 +28,12 @@ func (a *App) SeedDemo() error {
 	}
 	ids := []string{uuid.NewString(), uuid.NewString(), uuid.NewString()}
 	for i, u := range []struct{ handle, name string }{{"mina", "Mina Chen"}, {"leo", "Leo Park"}, {"ava", "Ava Stone"}} {
-		if _, e = tx.Exec("INSERT INTO users(id,handle,display_name,bio,password_hash,created_at) VALUES(?,?,?,'',?,?)", ids[i], u.handle, u.name, string(hash), now()); e != nil {
+		if _, e = tx.ExecContext(ctx, "INSERT INTO users(id,handle,display_name,bio,password_hash,created_at) VALUES(?,?,?,'',?,?)", ids[i], u.handle, u.name, string(hash), now()); e != nil {
 			return e
 		}
 	}
 	for _, pair := range [][2]int{{0, 1}, {0, 2}, {1, 0}} {
-		if _, e = tx.Exec("INSERT INTO follows(follower_id,following_id,created_at) VALUES(?,?,?)", ids[pair[0]], ids[pair[1]], now()); e != nil {
+		if _, e = tx.ExecContext(ctx, "INSERT INTO follows(follower_id,following_id,created_at) VALUES(?,?,?)", ids[pair[0]], ids[pair[1]], now()); e != nil {
 			return e
 		}
 	}
@@ -45,12 +47,12 @@ func (a *App) SeedDemo() error {
 		if i == 0 {
 			id = first
 		}
-		if _, e = tx.Exec("INSERT INTO posts(id,author_id,body,parent_id,created_at) VALUES(?,?,?,?,?)", id, ids[p.author], p.body, p.parent, now()); e != nil {
+		if _, e = tx.ExecContext(ctx, "INSERT INTO posts(id,author_id,body,parent_id,created_at) VALUES(?,?,?,?,?)", id, ids[p.author], p.body, p.parent, now()); e != nil {
 			return e
 		}
 	}
 	for _, i := range []int{0, 2} {
-		if _, e = tx.Exec("INSERT INTO likes(user_id,post_id,created_at) VALUES(?,?,?)", ids[i], first, now()); e != nil {
+		if _, e = tx.ExecContext(ctx, "INSERT INTO likes(user_id,post_id,created_at) VALUES(?,?,?)", ids[i], first, now()); e != nil {
 			return e
 		}
 	}
