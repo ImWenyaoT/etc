@@ -41,3 +41,7 @@ yarn-error.log*
 # 部署 / deploy
 .vercel/
 .cursor/
+
+# Go binaries and local application data
+**/bin/
+**/data/

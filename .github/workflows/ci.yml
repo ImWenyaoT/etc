@@ -1,56 +1,39 @@
 name: CI
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-
-# 每个模板是自包含的 pnpm 项目：矩阵逐项目安装并跑 typecheck / lint / test / build，
-# 任一失败都会让该项目的作业变红。
 jobs:
   check:
-    name: ${{ matrix.project }}
     runs-on: ubuntu-latest
+    env:
+      GOWORK: "off"
     strategy:
       fail-fast: false
       matrix:
-        project:
-          - json-yaml-xml-parser
-          - nodejs-cli-file-search
-          - random-red-black-tree-sort
-          - web-front-end-snake-game
-          - trumpet-twitter
+        project: [nodejs-cli-file-search, json-yaml-xml-parser, random-red-black-tree-sort, web-front-end-snake-game, trumpet-twitter]
     defaults:
       run:
         working-directory: ${{ matrix.project }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
+      - uses: actions/setup-go@v5
         with:
-          package_json_file: ${{ matrix.project }}/package.json
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+          go-version-file: ${{ matrix.project }}/go.mod
+          cache: ${{ matrix.project == 'json-yaml-xml-parser' || matrix.project == 'trumpet-twitter' }}
+          cache-dependency-path: ${{ matrix.project }}/go.sum
+      - uses: actions/setup-node@v4
         with:
-          # Active LTS (Krypton); matches engines.node >=24.15.0 across templates.
           node-version: 24
-          cache: pnpm
-          cache-dependency-path: ${{ matrix.project }}/pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Typecheck
-        run: pnpm typecheck
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Test
-        run: pnpm test
-
-      - name: Build
-        run: pnpm build
+          cache: npm
+          cache-dependency-path: ${{ matrix.project }}/web/package-lock.json
+      - run: go vet ./...
+      - run: go test -race ./...
+      - run: go build ./...
+      - run: npm ci
+        working-directory: ${{ matrix.project }}/web
+      - run: npm test
+        working-directory: ${{ matrix.project }}/web
+      - run: npm run build
+        working-directory: ${{ matrix.project }}/web
