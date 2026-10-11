@@ -56,3 +56,5 @@ npm run build
 - 根目录 Go 文件：可复用业务逻辑（Twitter 位于 `internal/app`）。
 
 迁移差异见仓库根目录 `MIGRATION.md`。
+
+Go 应用通过 `app.Open(file, app.Config{CookieSecure: ..., WebOrigin: ...})` 创建；环境变量只由 `cmd/server` 读取，配置在启动时校验并复制。正常业务和存储失败返回 `error`，HTTP Adapter 统一映射状态码与安全提示。请求 Context 传入所有请求中的 SQL 操作；`SeedDemo(ctx)` 通过事务执行并支持取消。测试使用相同的 HTTP Interface 和真实临时 SQLite，不引入单一实现的仓储 Interface。

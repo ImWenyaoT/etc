@@ -54,3 +54,5 @@ npm run build
 - 根目录 Go 文件：可复用业务逻辑（Twitter 位于 `internal/app`）。
 
 迁移差异见仓库根目录 `MIGRATION.md`。
+
+成绩 Module 的 Interface 为 `Open/List/Add`。`List` 返回副本，`Add` 只在原子替换文件成功后更新内存；保存失败不改变上一份成绩。损坏 JSON 会报错，不自动覆盖。单文件只允许一个 Store/进程持有；不提供断电持久性或防作弊保证。

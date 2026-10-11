@@ -57,3 +57,5 @@ npm run build
 - 根目录 Go 文件：可复用业务逻辑（Twitter 位于 `internal/app`）。
 
 迁移差异见仓库根目录 `MIGRATION.md`。
+
+Go 调用者可通过 `errors.Is` 判断 `ErrUnsupportedFormat` 与 `ErrInvalidDocument`；原始解析错误仍保留在错误链中。XML 映射、空 YAML 与单文档限制见 `parser.Parse` 的 Go 文档。

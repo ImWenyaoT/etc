@@ -56,3 +56,5 @@ npm run build
 - 根目录 Go 文件：可复用业务逻辑（Twitter 位于 `internal/app`）。
 
 迁移差异见仓库根目录 `MIGRATION.md`。
+
+`Tree` 的零值可直接使用；`Stats()` 返回独立的统计快照，`Values()` 返回独立切片。调用者无法通过快照修改内部状态；同一棵树不支持并发修改。HTTP 结果字段保持不变。

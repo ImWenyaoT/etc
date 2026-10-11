@@ -41,6 +41,7 @@ function friendlyMessage(message?: string): string {
     "expected one JSON value": "提交内容有误，请刷新后重试。",
   };
   if (
+    message.startsWith("search incomplete:") ||
     message.startsWith("stat ") ||
     message.startsWith("open ") ||
     message.startsWith("lstat ")

@@ -3,13 +3,15 @@ package main
 import (
 	"context"
 	"errors"
-	"github.com/ImWenyaoT/etc/trumpet-twitter/internal/app"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
+
+	"github.com/ImWenyaoT/etc/trumpet-twitter/internal/app"
 )
 
 func main() {
@@ -17,7 +19,15 @@ func main() {
 	if file == "" {
 		file = "data/trumpet.db"
 	}
-	a, e := app.Open(file)
+	config := app.Config{WebOrigin: os.Getenv("WEB_ORIGIN")}
+	if raw := os.Getenv("COOKIE_SECURE"); raw != "" {
+		value, err := strconv.ParseBool(raw)
+		if err != nil {
+			log.Fatalf("COOKIE_SECURE: %v", err)
+		}
+		config.CookieSecure = value
+	}
+	a, e := app.Open(file, config)
 	if e != nil {
 		log.Fatal(e)
 	}

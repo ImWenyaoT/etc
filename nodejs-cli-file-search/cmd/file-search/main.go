@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
-	search "github.com/ImWenyaoT/etc/nodejs-cli-file-search"
 	"os"
+
+	search "github.com/ImWenyaoT/etc/nodejs-cli-file-search"
 )
 
 func main() {
@@ -26,7 +28,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "unexpected arguments")
 		os.Exit(1)
 	}
-	matches, e := search.Files(search.Options{Root: *root, Query: os.Args[2], Max: *max})
+	matches, e := search.Files(context.Background(), search.Options{Root: *root, Query: os.Args[2], Max: *max})
 	if e != nil {
 		fmt.Fprintln(os.Stderr, e)
 		os.Exit(1)

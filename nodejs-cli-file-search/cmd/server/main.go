@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	search "github.com/ImWenyaoT/etc/nodejs-cli-file-search"
-	"github.com/ImWenyaoT/etc/nodejs-cli-file-search/internal/httpapi"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	search "github.com/ImWenyaoT/etc/nodejs-cli-file-search"
+	"github.com/ImWenyaoT/etc/nodejs-cli-file-search/internal/httpapi"
 )
 
 func main() {
@@ -36,7 +37,7 @@ func main() {
 			httpapi.Error(w, 400, fmt.Errorf("max must be between 1 and 1000"))
 			return
 		}
-		items, e := search.Files(search.Options{Root: root, Query: b.Query, Max: b.Max})
+		items, e := search.Files(r.Context(), search.Options{Root: root, Query: b.Query, Max: b.Max})
 		if e != nil {
 			httpapi.Error(w, 400, e)
 			return

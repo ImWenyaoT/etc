@@ -1,16 +1,20 @@
-package app
+package app_test
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	app "github.com/ImWenyaoT/etc/trumpet-twitter/internal/app"
 )
 
-func call(t *testing.T, a *App, method, path, body string, cookie *http.Cookie) (*httptest.ResponseRecorder, map[string]any) {
+func call(t *testing.T, a *app.App, method, path, body string, cookie *http.Cookie) (*httptest.ResponseRecorder, map[string]any) {
 	t.Helper()
 	r := httptest.NewRequest(method, path, strings.NewReader(body))
 	if cookie != nil {
@@ -26,7 +30,7 @@ func call(t *testing.T, a *App, method, path, body string, cookie *http.Cookie) 
 	}
 	return w, data
 }
-func register(t *testing.T, a *App, handle string) (*http.Cookie, string) {
+func register(t *testing.T, a *app.App, handle string) (*http.Cookie, string) {
 	w, d := call(t, a, "POST", "/auth/register", fmt.Sprintf(`{"handle":%q,"displayName":"Ada","password":"password123"}`, handle), nil)
 	if w.Code != 201 {
 		t.Fatalf("%d %v", w.Code, d)
@@ -35,7 +39,7 @@ func register(t *testing.T, a *App, handle string) (*http.Cookie, string) {
 }
 func TestSocialFlow(t *testing.T) {
 	file := filepath.Join(t.TempDir(), "app.db")
-	a, e := Open(file)
+	a, e := app.Open(file, app.Config{})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -100,7 +104,7 @@ func TestSocialFlow(t *testing.T) {
 		}
 	}
 	a.Close()
-	a, e = Open(file)
+	a, e = app.Open(file, app.Config{})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -122,7 +126,7 @@ func TestSocialFlow(t *testing.T) {
 	}
 }
 func TestValidation(t *testing.T) {
-	a, e := Open(":memory:")
+	a, e := app.Open(":memory:", app.Config{})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -153,15 +157,15 @@ func TestValidation(t *testing.T) {
 }
 
 func TestSeedPreservesExistingData(t *testing.T) {
-	a, e := Open(":memory:")
+	a, e := app.Open(":memory:", app.Config{})
 	if e != nil {
 		t.Fatal(e)
 	}
 	defer a.Close()
-	if e = a.SeedDemo(); e != nil {
+	if e = a.SeedDemo(context.Background()); e != nil {
 		t.Fatal(e)
 	}
-	if e = a.SeedDemo(); e == nil {
+	if e = a.SeedDemo(context.Background()); e == nil {
 		t.Fatal("nonempty database accepted")
 	}
 	w, d := call(t, a, "POST", "/auth/login", `{"handle":"mina","password":"password123"}`, nil)
@@ -172,5 +176,126 @@ func TestSeedPreservesExistingData(t *testing.T) {
 	_, d = call(t, a, "GET", "/timeline", "", cookie)
 	if len(d["items"].([]any)) != 3 {
 		t.Fatal(d)
+	}
+}
+
+func TestExplicitConfigControlsCookiesAndOrigin(t *testing.T) {
+	t.Setenv("COOKIE_SECURE", "false")
+	t.Setenv("WEB_ORIGIN", "https://wrong.example")
+	config := app.Config{CookieSecure: true, WebOrigin: "https://app.example"}
+	a, err := app.Open(":memory:", config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer a.Close()
+	// Mutating the caller's value or environment must not reconfigure a live module.
+	config.WebOrigin = "https://wrong.example"
+	request := httptest.NewRequest("POST", "/auth/register", strings.NewReader(`{"handle":"alice","displayName":"Ada","password":"password123"}`))
+	request.Header.Set("Origin", "https://app.example")
+	response := httptest.NewRecorder()
+	a.ServeHTTP(response, request)
+	if response.Code != 201 {
+		t.Fatalf("%d %s", response.Code, response.Body.String())
+	}
+	cookies := response.Result().Cookies()
+	if len(cookies) != 1 || !cookies[0].Secure || !cookies[0].HttpOnly {
+		t.Fatalf("cookies: %v", cookies)
+	}
+	logout := httptest.NewRequest("POST", "/auth/logout", nil)
+	logout.Header.Set("Origin", "https://wrong.example")
+	logout.AddCookie(cookies[0])
+	rejected := httptest.NewRecorder()
+	a.ServeHTTP(rejected, logout)
+	if rejected.Code != 403 {
+		t.Fatalf("unexpected origin accepted: %d", rejected.Code)
+	}
+	_, data := call(t, a, "GET", "/me", "", cookies[0])
+	if data["user"] == nil {
+		t.Fatal("rejected logout changed session")
+	}
+	logout.Header.Set("Origin", "https://app.example")
+	accepted := httptest.NewRecorder()
+	a.ServeHTTP(accepted, logout)
+	if accepted.Code != 204 || !accepted.Result().Cookies()[0].Secure {
+		t.Fatal("configured logout changed")
+	}
+}
+
+func TestInvalidOriginConfigFailsAtOpen(t *testing.T) {
+	for _, origin := range []string{"ftp://app.example", "https://", "https://app.example/path", "https://app.example?x=1", "https://app.example#fragment", "https://user:pass@app.example"} {
+		t.Run(origin, func(t *testing.T) {
+			a, err := app.Open(":memory:", app.Config{WebOrigin: origin})
+			if err == nil {
+				a.Close()
+				t.Fatal("invalid origin accepted")
+			}
+		})
+	}
+}
+
+func TestCanceledRequestDoesNotCreatePost(t *testing.T) {
+	a, err := app.Open(":memory:", app.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer a.Close()
+	cookie, _ := register(t, a, "alice")
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	request := httptest.NewRequest("POST", "/posts", strings.NewReader(`{"body":"must not be stored"}`)).WithContext(ctx)
+	request.AddCookie(cookie)
+	response := httptest.NewRecorder()
+	a.ServeHTTP(response, request)
+	if response.Code != 500 {
+		t.Fatalf("canceled request succeeded: %d", response.Code)
+	}
+	_, data := call(t, a, "GET", "/timeline", "", cookie)
+	if len(data["items"].([]any)) != 0 {
+		t.Fatal("canceled request wrote a post")
+	}
+}
+
+func TestStorageFailureIsASanitizedHTTPError(t *testing.T) {
+	a, err := app.Open(":memory:", app.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cookie, _ := register(t, a, "alice")
+	if err = a.Close(); err != nil {
+		t.Fatal(err)
+	}
+	response, data := call(t, a, "GET", "/me", "", cookie)
+	problem := data["error"].(map[string]any)
+	if response.Code != 500 || problem["code"] != "internal_error" || problem["message"] != "暂时无法使用，请稍后再试。" {
+		t.Fatalf("storage details exposed: %d %v", response.Code, data)
+	}
+}
+
+func TestCanceledSeedLeavesDatabaseEmpty(t *testing.T) {
+	a, err := app.Open(":memory:", app.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer a.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err = a.SeedDemo(ctx); !errors.Is(err, context.Canceled) {
+		t.Fatalf("%v", err)
+	}
+	if err = a.SeedDemo(context.Background()); err != nil {
+		t.Fatalf("canceled seed left data behind: %v", err)
+	}
+}
+
+func TestInvalidCursorKeepsClientErrorContract(t *testing.T) {
+	a, err := app.Open(":memory:", app.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer a.Close()
+	cookie, _ := register(t, a, "alice")
+	response, data := call(t, a, "GET", "/timeline?cursor=not-a-valid-cursor", "", cookie)
+	if response.Code != 400 || data["error"].(map[string]any)["code"] != "invalid_cursor" {
+		t.Fatalf("%d %v", response.Code, data)
 	}
 }
