@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import App from "./App";
+import HomeClient from "./home-client";
 
 afterEach(() => {
   cleanup();
@@ -15,7 +15,7 @@ describe("解析表单", () => {
       }),
     );
     vi.stubGlobal("fetch", fetch);
-    render(<App />);
+    render(<HomeClient />);
     const json = screen.getByRole("button", { name: /^JSON$/ });
     fireEvent.click(json);
     fireEvent.click(json);
@@ -40,7 +40,7 @@ describe("解析表单", () => {
         }),
       ),
     );
-    render(<App />);
+    render(<HomeClient />);
     fireEvent.click(screen.getByRole("button", { name: "转换文档" }));
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("文档格式无效");

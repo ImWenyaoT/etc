@@ -1,5 +1,7 @@
+"use client";
+
 import { useState } from "react";
-import { useTask } from "./useTask";
+import { useTask } from "@/lib/useTask";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -19,12 +21,14 @@ import {
   TaskError,
   TaskEmpty,
 } from "@/components/tool-layout";
+
 const samples: Record<string, string> = {
   json: '{\n  "name": "Ada",\n  "skills": ["JSON", "YAML", "XML"]\n}',
   yaml: "name: Ada\nskills:\n  - JSON\n  - YAML\n  - XML",
   xml: '<person id="1">\n  <name>Ada</name>\n  <skill>JSON</skill>\n  <skill>XML</skill>\n</person>',
 };
-export default function App() {
+
+export default function HomeClient() {
   const [format, setFormat] = useState("yaml");
   const [source, setSource] = useState(samples.yaml);
   const task = useTask<{ data: unknown }>();
@@ -56,7 +60,7 @@ export default function App() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setSource(samples[format])}
+                onClick={() => setSource(samples[format]!)}
               >
                 填入示例
               </Button>
