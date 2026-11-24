@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { loadBestScore, saveBestScore } from '../src/game/highScore'
+import { loadBestScore, saveBestScore } from './highScore'
 
 function createMemoryStorage() {
   const values = new Map<string, string>()

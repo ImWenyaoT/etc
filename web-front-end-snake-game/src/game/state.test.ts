@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { defaultGameConfig } from '../src/game/config'
+import { defaultGameConfig } from './config'
 import {
   createInitialState,
   isOppositeDirection,
@@ -8,8 +8,8 @@ import {
   pointsAreEqual,
   reduceAction,
   stepGame,
-} from '../src/game/state'
-import type { Direction, GameConfig, GameState, Point } from '../src/game/types'
+} from './state'
+import type { Direction, GameConfig, GameState, Point } from './types'
 
 const testConfig: GameConfig = {
   ...defaultGameConfig,

@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,15 +24,15 @@ import {
   ArrowRightIcon,
 } from "lucide-react";
 import { useState } from "react";
-import { useSnakeGame } from "./useSnakeGame";
-import { request } from "./api";
+import { useSnakeGame } from "@/useSnakeGame";
+import { request } from "@/api";
 const statuses = {
   idle: "尚未开始",
   running: "游戏中",
   paused: "已暂停",
   "game-over": "本局结束",
 };
-export default function App() {
+export default function HomeClient() {
   const { canvas, hud, act } = useSnakeGame();
   const [name, setName] = useState("玩家");
   const [saved, setSaved] = useState(false);

@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defaultGameConfig } from '../src/game/config'
-import { createInitialState } from '../src/game/state'
-import type { GameStatus } from '../src/game/types'
-import { createCanvasRenderer } from '../src/renderer/canvasRenderer'
+import { defaultGameConfig } from '../game/config'
+import { createInitialState } from '../game/state'
+import type { GameStatus } from '../game/types'
+import { createCanvasRenderer } from './canvasRenderer'
 
 function createMockContext() {
   return {

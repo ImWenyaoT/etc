@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { bindKeyboardControls } from "../src/input";
-import type { InputAction } from "../src/game/types";
+import { bindKeyboardControls } from "./input";
+import type { InputAction } from "./game/types";
 afterEach(() => {
   document.body.innerHTML = "";
 });
