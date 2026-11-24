@@ -1,5 +1,7 @@
+"use client";
+
 import { useState } from "react";
-import { useTask } from "./useTask";
+import { useTask } from "@/lib/useTask";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,7 +25,8 @@ import {
   TaskError,
   TaskEmpty,
 } from "@/components/tool-layout";
-export default function App() {
+
+export default function HomeClient() {
   const [query, setQuery] = useState("");
   const [max, setMax] = useState(50);
   const task = useTask<{ items: string[] }>();
@@ -59,7 +62,7 @@ export default function App() {
                     id="query"
                     name="query"
                     required
-                    placeholder="如 README、config、.go"
+                    placeholder="如 README、config、.ts"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     aria-describedby="query-hint"
@@ -115,18 +118,18 @@ export default function App() {
               <TaskError message={task.error} />
             ) : task.status === "success" && task.data!.items.length > 0 ? (
               <ul className="divide-y">
-                {task.data!.items.map((path) => (
-                  <li className="flex gap-3 py-4" key={path}>
+                {task.data!.items.map((itemPath) => (
+                  <li className="flex gap-3 py-4" key={itemPath}>
                     <FileIcon
                       className="mt-0.5 size-4 shrink-0 text-muted-foreground"
                       aria-hidden="true"
                     />
                     <div className="min-w-0">
                       <strong className="text-sm font-medium">
-                        {path.split(/[\/]/).pop()}
+                        {itemPath.split(/[\/]/).pop()}
                       </strong>
                       <code className="mt-1 block text-xs leading-6 wrap-anywhere text-muted-foreground">
-                        {path}
+                        {itemPath}
                       </code>
                     </div>
                   </li>
