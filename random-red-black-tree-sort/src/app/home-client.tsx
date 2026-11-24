@@ -1,5 +1,7 @@
+"use client";
+
 import { useState } from "react";
-import { useTask } from "./useTask";
+import { useTask } from "@/lib/useTask";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +25,7 @@ import {
   TaskError,
   TaskEmpty,
 } from "@/components/tool-layout";
+
 interface Result {
   elementCount: number;
   insertTimeMs: number;
@@ -38,7 +41,7 @@ interface Result {
   validationErrors: string[];
 }
 
-export default function App() {
+export default function HomeClient() {
   const [count, setCount] = useState(10000);
   const [seed, setSeed] = useState(42);
   const task = useTask<Result>();
@@ -59,7 +62,11 @@ export default function App() {
             <CardTitle>
               <h2>排序设置</h2>
             </CardTitle>
-            <CardDescription>左倾红黑树（LLRB）<br />让查找和排序保持高效的一种结构。</CardDescription>
+            <CardDescription>
+              左倾红黑树（LLRB）
+              <br />
+              让查找和排序保持高效的一种结构。
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -175,7 +182,7 @@ export default function App() {
                       "为保持平衡，调整节点位置的次数。",
                     ],
                   ].map(([label, value, unit, explanation]) => (
-                    <div key={label}>
+                    <div key={label as string}>
                       <dt className="text-xs text-muted-foreground">{label}</dt>
                       <dd className="mt-2 text-3xl font-semibold tracking-tight tabular-nums">
                         {value}{" "}
