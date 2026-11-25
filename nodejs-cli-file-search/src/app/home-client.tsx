@@ -126,7 +126,7 @@ export default function HomeClient() {
                     />
                     <div className="min-w-0">
                       <strong className="text-sm font-medium">
-                        {itemPath.split(/[\/]/).pop()}
+                        {itemPath.split(/[/\\]/).pop()}
                       </strong>
                       <code className="mt-1 block text-xs leading-6 wrap-anywhere text-muted-foreground">
                         {itemPath}

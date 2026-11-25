@@ -1,6 +1,6 @@
 # Next.js 全栈目录约定
 
-仓库顶层只保留五个独立项目目录与 `docs/`（以及 README、LICENSE、CI 等仓库元数据）。每个项目是可单独安装、启动、测试的 Next.js App Router 应用；不再使用 Go、Vite 双进程或根目录 `go.work`。
+仓库顶层只保留五个独立项目目录与 `docs/`（以及 README、LICENSE、CI 等仓库元数据）。五个项目通过根目录 `pnpm-workspace.yaml` 组成 workspace；Lint/Format 使用根目录 Oxc 配置（`.oxlintrc.json`、`.oxfmtrc.json`）。每个项目是可单独启动、测试的 Next.js App Router 应用；不再使用 Go、Vite 双进程或根目录 `go.work`。
 
 ## 每个项目
 

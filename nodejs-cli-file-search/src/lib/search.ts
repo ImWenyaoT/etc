@@ -29,12 +29,7 @@ export async function files(
   if (signal?.aborted) throw signal.reason ?? new Error("aborted");
 
   const root = path.resolve(options.root);
-  let rootStat;
-  try {
-    rootStat = await fs.stat(root);
-  } catch (error) {
-    throw error;
-  }
+  const rootStat = await fs.stat(root);
   if (!rootStat.isDirectory()) {
     throw new Error("root must be a directory");
   }

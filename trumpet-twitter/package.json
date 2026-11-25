@@ -9,7 +9,11 @@
     "start": "next start -p 18105",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "seed": "tsx src/cli-seed.ts"
+    "seed": "tsx src/cli-seed.ts",
+    "lint": "oxlint --type-aware .",
+    "lint:fix": "oxlint --type-aware --fix .",
+    "format": "oxfmt --check .",
+    "format:write": "oxfmt ."
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

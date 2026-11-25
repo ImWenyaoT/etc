@@ -4,11 +4,11 @@
 
 ## 环境与启动
 
-需要 Node.js 22+。
+需要 Node.js 22+ and pnpm 10+。
 
 ```sh
-npm ci
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 打开 `http://localhost:18103`。
@@ -16,7 +16,7 @@ npm run dev
 ## CLI
 
 ```sh
-npm run cli -- --count 10000 --seed 42
+pnpm cli -- --count 10000 --seed 42
 ```
 
 默认 `--count 10000`、`--seed 42`，打印缩进的 Result JSON。
@@ -30,8 +30,8 @@ npm run cli -- --count 10000 --seed 42
 ## 检查
 
 ```sh
-npm test
-npm run build
+pnpm test
+pnpm build
 ```
 
 ## 目录

@@ -14,14 +14,22 @@ const requestJson = async <T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> => {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (
+    options.headers &&
+    typeof options.headers === "object" &&
+    !(options.headers instanceof Headers) &&
+    !Array.isArray(options.headers)
+  ) {
+    Object.assign(headers, options.headers);
+  }
   const response = await fetch(`${apiUrl}${path}`, {
     ...options,
     cache: "no-store",
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
+    headers,
   }).catch((error: unknown) => {
     if (
       typeof error === "object" &&

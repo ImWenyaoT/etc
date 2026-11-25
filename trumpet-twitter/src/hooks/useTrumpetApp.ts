@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { PostView, UserView } from "@trumpet/shared";
 import { api } from "@/lib/api";
-import {
-  initialTrumpetState,
-  reduceTrumpet,
-} from "@/state/trumpet-machine";
+import { initialTrumpetState, reduceTrumpet } from "@/state/trumpet-machine";
 
 const messageFrom = (cause: unknown, fallback: string) =>
   cause instanceof Error ? cause.message : fallback;

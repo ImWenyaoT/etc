@@ -4,11 +4,11 @@ Standalone Next.js fullstack app: left-leaning red-black tree sort of shuffled u
 
 ## Setup
 
-Requires Node.js 22+.
+Requires Node.js 22+ and pnpm 10+.
 
 ```sh
-npm ci
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open `http://localhost:18103`.
@@ -16,7 +16,7 @@ Open `http://localhost:18103`.
 ## CLI
 
 ```sh
-npm run cli -- --count 10000 --seed 42
+pnpm cli -- --count 10000 --seed 42
 ```
 
 Prints indented Result JSON. Defaults: `--count 10000`, `--seed 42`.
@@ -24,6 +24,6 @@ Prints indented Result JSON. Defaults: `--count 10000`, `--seed 42`.
 ## Check
 
 ```sh
-npm test
-npm run build
+pnpm test
+pnpm build
 ```

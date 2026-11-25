@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defaultGameConfig } from '../game/config'
-import { createInitialState } from '../game/state'
-import type { GameStatus } from '../game/types'
-import { createCanvasRenderer } from './canvasRenderer'
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { defaultGameConfig } from "../game/config";
+import { createInitialState } from "../game/state";
+import type { GameStatus } from "../game/types";
+import { createCanvasRenderer } from "./canvasRenderer";
 
 function createMockContext() {
   return {
@@ -18,12 +18,12 @@ function createMockContext() {
     restore: vi.fn(),
     roundRect: vi.fn(),
     setTransform: vi.fn(),
-    fillStyle: '',
-    strokeStyle: '',
+    fillStyle: "",
+    strokeStyle: "",
     lineWidth: 0,
-    shadowColor: '',
+    shadowColor: "",
     shadowBlur: 0,
-  }
+  };
 }
 
 function createMockCanvas(context: unknown): HTMLCanvasElement {
@@ -32,80 +32,99 @@ function createMockCanvas(context: unknown): HTMLCanvasElement {
     height: 0,
     getContext: vi.fn(() => context),
     getBoundingClientRect: vi.fn(() => ({ width: 480 })),
-  } as unknown as HTMLCanvasElement
+  } as unknown as HTMLCanvasElement;
 }
 
 function stateWithStatus(status: GameStatus) {
-  return { ...createInitialState(defaultGameConfig), status }
+  return { ...createInitialState(defaultGameConfig), status };
 }
 
-describe('createCanvasRenderer', () => {
-  let addEventListener: ReturnType<typeof vi.fn>
-  let removeEventListener: ReturnType<typeof vi.fn>
+describe("createCanvasRenderer", () => {
+  let addEventListener: ReturnType<typeof vi.fn>;
+  let removeEventListener: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    addEventListener = vi.fn()
-    removeEventListener = vi.fn()
-    vi.stubGlobal('window', { devicePixelRatio: 1, addEventListener, removeEventListener })
-  })
+    addEventListener = vi.fn();
+    removeEventListener = vi.fn();
+    vi.stubGlobal("window", {
+      devicePixelRatio: 1,
+      addEventListener,
+      removeEventListener,
+    });
+  });
 
   afterEach(() => {
-    vi.unstubAllGlobals()
-  })
+    vi.unstubAllGlobals();
+  });
 
-  it('throws when the 2D context is unavailable', () => {
-    expect(() => createCanvasRenderer(createMockCanvas(null), defaultGameConfig)).toThrow(
-      'Canvas rendering context is not available',
-    )
-  })
+  it("throws when the 2D context is unavailable", () => {
+    expect(() =>
+      createCanvasRenderer(createMockCanvas(null), defaultGameConfig),
+    ).toThrow("Canvas rendering context is not available");
+  });
 
-  it('sizes the canvas and registers a resize listener on creation', () => {
-    const context = createMockContext()
-    const canvas = createMockCanvas(context)
+  it("sizes the canvas and registers a resize listener on creation", () => {
+    const context = createMockContext();
+    const canvas = createMockCanvas(context);
 
-    createCanvasRenderer(canvas, defaultGameConfig)
+    createCanvasRenderer(canvas, defaultGameConfig);
 
-    expect(context.setTransform).toHaveBeenCalledTimes(1)
-    expect(canvas.width).toBe(480)
-    expect(addEventListener).toHaveBeenCalledWith('resize', expect.any(Function))
-  })
+    expect(context.setTransform).toHaveBeenCalledTimes(1);
+    expect(canvas.width).toBe(480);
+    expect(addEventListener).toHaveBeenCalledWith(
+      "resize",
+      expect.any(Function),
+    );
+  });
 
-  it('draws background, food, and every snake segment while running', () => {
-    const context = createMockContext()
-    const renderer = createCanvasRenderer(createMockCanvas(context), defaultGameConfig)
-    const state = stateWithStatus('running')
+  it("draws background, food, and every snake segment while running", () => {
+    const context = createMockContext();
+    const renderer = createCanvasRenderer(
+      createMockCanvas(context),
+      defaultGameConfig,
+    );
+    const state = stateWithStatus("running");
 
-    renderer.render(state)
+    renderer.render(state);
 
-    expect(context.clearRect).toHaveBeenCalledTimes(1)
+    expect(context.clearRect).toHaveBeenCalledTimes(1);
     // 无覆盖层时只画一次背景矩形。
-    expect(context.fillRect).toHaveBeenCalledTimes(1)
+    expect(context.fillRect).toHaveBeenCalledTimes(1);
     // 食物用一个圆。
-    expect(context.arc).toHaveBeenCalledTimes(1)
+    expect(context.arc).toHaveBeenCalledTimes(1);
     // 每段蛇身画一个圆角格子。
-    expect(context.roundRect).toHaveBeenCalledTimes(state.snake.length)
-  })
+    expect(context.roundRect).toHaveBeenCalledTimes(state.snake.length);
+  });
 
-  it('draws paused and game-over overlays on top of the board', () => {
-    const pausedContext = createMockContext()
-    const overContext = createMockContext()
-    const pausedRenderer = createCanvasRenderer(createMockCanvas(pausedContext), defaultGameConfig)
-    const overRenderer = createCanvasRenderer(createMockCanvas(overContext), defaultGameConfig)
+  it("draws paused and game-over overlays on top of the board", () => {
+    const pausedContext = createMockContext();
+    const overContext = createMockContext();
+    const pausedRenderer = createCanvasRenderer(
+      createMockCanvas(pausedContext),
+      defaultGameConfig,
+    );
+    const overRenderer = createCanvasRenderer(
+      createMockCanvas(overContext),
+      defaultGameConfig,
+    );
 
-    pausedRenderer.render(stateWithStatus('paused'))
-    overRenderer.render(stateWithStatus('game-over'))
+    pausedRenderer.render(stateWithStatus("paused"));
+    overRenderer.render(stateWithStatus("game-over"));
 
-    expect(pausedContext.fillRect).toHaveBeenCalledTimes(2)
-    expect(overContext.fillRect).toHaveBeenCalledTimes(2)
-  })
+    expect(pausedContext.fillRect).toHaveBeenCalledTimes(2);
+    expect(overContext.fillRect).toHaveBeenCalledTimes(2);
+  });
 
-  it('removes the resize listener on destroy', () => {
-    const context = createMockContext()
-    const renderer = createCanvasRenderer(createMockCanvas(context), defaultGameConfig)
-    const handler = addEventListener.mock.calls[0]?.[1]
+  it("removes the resize listener on destroy", () => {
+    const context = createMockContext();
+    const renderer = createCanvasRenderer(
+      createMockCanvas(context),
+      defaultGameConfig,
+    );
+    const handler = addEventListener.mock.calls[0]?.[1];
 
-    renderer.destroy()
+    renderer.destroy();
 
-    expect(removeEventListener).toHaveBeenCalledWith('resize', handler)
-  })
-})
+    expect(removeEventListener).toHaveBeenCalledWith("resize", handler);
+  });
+});

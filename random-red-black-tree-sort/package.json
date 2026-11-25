@@ -9,7 +9,11 @@
     "start": "next start -p 18103",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "cli": "tsx src/cli.ts"
+    "cli": "tsx src/cli.ts",
+    "lint": "oxlint --type-aware .",
+    "lint:fix": "oxlint --type-aware --fix .",
+    "format": "oxfmt --check .",
+    "format:write": "oxfmt ."
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

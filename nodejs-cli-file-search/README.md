@@ -4,11 +4,11 @@
 
 ## 环境与启动
 
-需要 Node.js 22+。
+需要 Node.js 22+ and pnpm 10+。
 
 ```sh
-npm ci
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 打开 `http://localhost:18101`。查找根目录由 `SEARCH_ROOT` 指定（默认当前工作目录）；浏览器不能改这个路径。
@@ -16,7 +16,7 @@ npm run dev
 ## CLI
 
 ```sh
-npm run cli -- search <keyword> [--root|-r dir] [--max|-m N]
+pnpm cli -- search <keyword> [--root|-r dir] [--max|-m N]
 ```
 
 默认 `--root .`、`--max 50`，打印绝对路径。
@@ -24,8 +24,8 @@ npm run cli -- search <keyword> [--root|-r dir] [--max|-m N]
 ## 检查
 
 ```sh
-npm test
-npm run build
+pnpm test
+pnpm build
 ```
 
 ## 目录

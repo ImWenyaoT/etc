@@ -1,10 +1,4 @@
-import {
-  mkdir,
-  open,
-  readFile,
-  rename,
-  unlink,
-} from "node:fs/promises";
+import { mkdir, open, readFile, rename, unlink } from "node:fs/promises";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
 
@@ -29,7 +23,10 @@ export class Store {
   private items: Score[] = [];
   private queue: Promise<unknown> = Promise.resolve();
 
-  private constructor(private readonly file: string, items: Score[]) {
+  private constructor(
+    private readonly file: string,
+    items: Score[],
+  ) {
     this.items = items;
   }
 
@@ -83,7 +80,7 @@ export class Store {
     const score = value.score;
     if (
       name === "" ||
-      [...name].length > 40 ||
+      Array.from(name).length > 40 ||
       !Number.isInteger(score) ||
       score < 0 ||
       score > 5720 ||
