@@ -1,60 +1,44 @@
 # 红黑树随机排序
 
-独立的 React + Vite 前端和 Go 后端。目录名保持不变。
+独立的 Next.js 全栈应用：用左倾红黑树对打乱的整数排序并检查不变量。
 
 ## 环境与启动
 
-需要 Go 1.25+ 和 Node.js 24.15+。
+需要 Node.js 22+。
 
 ```sh
-# 当前项目目录，终端一
-go run ./cmd/server
-
-# 终端二
-cd web
 npm ci
 npm run dev
 ```
 
-前端：`http://localhost:18103`；后端：`http://127.0.0.1:18203`。Go 监听地址可通过 `ADDR` 覆盖。
+打开 `http://localhost:18103`。
 
-构建后可仅运行 Go 服务：
+## CLI
 
 ```sh
-make build
-./bin/server
-# 在浏览器访问后端地址
+npm run cli -- --count 10000 --seed 42
 ```
+
+默认 `--count 10000`、`--seed 42`，打印缩进的 Result JSON。
 
 ## 功能与接口
 
-Go 库实现左倾红黑树，提供 `Tree.Insert`、`Tree.Values`、`Tree.Validate`、`Demo(count, seed)`。重复值不插入。使用 Fisher–Yates 随机排列插入 `[0, count)`，中序遍历输出排序结果。
+`src/lib/rbtree.ts` 实现左倾红黑树，提供 `Tree.insert`、`Tree.values`、`Tree.validate`、`demo(count, seed)`。重复值不插入。使用 Fisher–Yates 随机排列插入 `[0, count)`，中序遍历输出排序结果。同一 seed 在本实现内可复现插入顺序。
 
-```sh
-go run ./cmd/rb-sort --count 10000 --seed 42
-```
-
-`POST /api/sort` 接收 `{"count":10000,"seed":42}`，返回插入/遍历耗时、树高、旋转/重染色计数、黑高、排序和不变量验证、首尾十个值。数量范围 1–1,000,000。固定种子保证插入顺序可复现；耗时依赖运行环境。
+`POST /api/sort` 接收 `{"count":10000,"seed":42}`，返回插入/遍历耗时、树高、旋转/重染色计数、黑高、排序和不变量验证、首尾十个值。数量范围 1–1,000,000。耗时依赖运行环境。
 
 ## 检查
 
 ```sh
-go vet ./...
-go test -race ./...
-go build ./...
-cd web
-npm ci
 npm test
 npm run build
 ```
 
 ## 目录
 
-- `cmd/`：Go 服务和 CLI 入口。
-- `web/`：React + Vite 页面、前端依赖与锁文件。
-- `internal/`：仅供项目内部使用的实现。
-- 根目录 Go 文件：可复用业务逻辑（Twitter 位于 `internal/app`）。
+- `src/app/`：页面与 `POST /api/sort` Route Handler
+- `src/lib/rbtree.ts`：可复用的红黑树与 Demo 逻辑
+- `src/cli.ts`：命令行入口
+- `src/components/`：界面与 shadcn/ui 组件
 
-迁移差异见仓库根目录 `MIGRATION.md`。
-
-`Tree` 的零值可直接使用；`Stats()` 返回独立的统计快照，`Values()` 返回独立切片。调用者无法通过快照修改内部状态；同一棵树不支持并发修改。HTTP 结果字段保持不变。
+开发与生产都由 Next.js 同一进程提供页面和 API。

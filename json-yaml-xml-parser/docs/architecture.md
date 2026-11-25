@@ -2,20 +2,15 @@
 
 ```mermaid
 flowchart LR
-  UI[React 页面] --> Proxy[Vite 开发代理 / Go 静态服务]
-  Proxy --> API[Go net/http API]
-  API --> Core[业务逻辑]
+  UI[React 页面] --> API[Next.js Route Handler]
+  CLI[CLI] --> Core[parser.ts]
+  API --> Core
 ```
 
-前后端通过 JSON HTTP 接口通信，前端不依赖 Node.js 服务端。每个项目独立安装、构建和运行。Go 模块与 npm 锁文件分开维护，CI 对五个项目分别执行 Go 检查及前端构建。
+独立的 Next.js 全栈应用：同一进程提供页面与 `POST /api/parse`。核心逻辑在 `src/lib/parser.ts`（`detect` / `parse`），CLI 为 `npm run cli -- parse <file>`。
 
-Go 库提供 `Detect(path, format)` 和 `Parse(source, path, format)`。支持按扩展名判断格式和显式覆盖。CLI 将数据输出为格式化 JSON。
+- JSON：`JSON.parse`
+- YAML：`yaml` 包，仅单文档；空文档为 `null`；经 JSON 往返规范化
+- XML：自定义栈式解析；`$attributes` / `$text`；重复兄弟节点为数组；拒绝 DTD/指令、多根、嵌套超过 256
 
-```sh
-go run ./cmd/data-parser parse input.yaml
-go run ./cmd/data-parser parse input.txt --format xml
-```
-
-网页使用 `POST /api/parse`，请求体为 `{"source":"name: Ada","format":"yaml"}`。XML 属性保存为 `$attributes`、文本为 `$text`、重复元素为数组。拒绝格式错误、多根 XML、DTD 指令、超过 256 层 XML 和多文档 YAML。YAML 映射键必须能转换为 JSON 对象键。请求体限制为 1 MiB。
-
-Go 调用者可通过 `errors.Is` 判断 `ErrUnsupportedFormat` 与 `ErrInvalidDocument`；原始解析错误仍保留在错误链中。XML 映射、空 YAML 与单文档限制见 `parser.Parse` 的 Go 文档。
+请求体为 `{"source":"...","format":"json|yaml|xml"}`，成功 `{format,data,sourcePath?}`，失败 `400 {error:{message}}`。
