@@ -50,11 +50,7 @@ export function readSessionId(request: Request): string | undefined {
 }
 
 export function viewerId(request: Request, database = getDb()): string {
-  return getSessionUserId(
-    database,
-    readSessionId(request),
-    formatUtc(),
-  );
+  return getSessionUserId(database, readSessionId(request), formatUtc());
 }
 
 export function requireViewer(request: Request, database = getDb()): string {
@@ -91,10 +87,7 @@ export function parseAuthBody(value: unknown): AuthBody {
   if (typeof obj.handle !== "string" || typeof obj.password !== "string") {
     throw problem(400, "invalid_body", "提交内容有误，请刷新后重试。");
   }
-  if (
-    obj.displayName !== undefined &&
-    typeof obj.displayName !== "string"
-  ) {
+  if (obj.displayName !== undefined && typeof obj.displayName !== "string") {
     throw problem(400, "invalid_body", "提交内容有误，请刷新后重试。");
   }
   return {
@@ -159,11 +152,7 @@ export async function login(
   const hash = row?.password_hash ?? DUMMY_HASH;
   const match = await bcrypt.compare(body.password, hash);
   if (!row || !match) {
-    throw problem(
-      401,
-      "invalid_credentials",
-      "账号或密码不正确，请重新输入。",
-    );
+    throw problem(401, "invalid_credentials", "账号或密码不正确，请重新输入。");
   }
   return createSession(database, row.id);
 }
@@ -175,9 +164,7 @@ function createSession(
   const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   const token = uuidv4();
   const nowIso = formatUtc();
-  database
-    .prepare("DELETE FROM sessions WHERE expires_at <= ?")
-    .run(nowIso);
+  database.prepare("DELETE FROM sessions WHERE expires_at <= ?").run(nowIso);
   database
     .prepare(
       "INSERT INTO sessions(id, user_id, expires_at, created_at) VALUES(?, ?, ?, ?)",
@@ -194,10 +181,7 @@ export function logout(database: DatabaseSync, sessionId: string | undefined) {
   }
 }
 
-export function me(
-  database: DatabaseSync,
-  request: Request,
-): User | null {
+export function me(database: DatabaseSync, request: Request): User | null {
   const id = viewerId(request, database);
   if (!id) return null;
   return getUser(database, "id", id, id);

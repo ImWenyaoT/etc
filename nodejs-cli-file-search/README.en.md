@@ -4,11 +4,11 @@ Standalone Next.js fullstack app: case-insensitive filename substring search.
 
 ## Setup
 
-Requires Node.js 22+.
+Requires Node.js 22+ and pnpm 10+.
 
 ```sh
-npm ci
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open `http://localhost:18101`. Search root comes from `SEARCH_ROOT` (default `.`).
@@ -16,12 +16,12 @@ Open `http://localhost:18101`. Search root comes from `SEARCH_ROOT` (default `.`
 ## CLI
 
 ```sh
-npm run cli -- search <keyword> [--root|-r dir] [--max|-m N]
+pnpm cli -- search <keyword> [--root|-r dir] [--max|-m N]
 ```
 
 ## Check
 
 ```sh
-npm test
-npm run build
+pnpm test
+pnpm build
 ```

@@ -201,8 +201,7 @@ export function getPage(
 
   if (cursor) {
     const c = decodeCursor(cursor);
-    where +=
-      " AND (p.created_at < ? OR (p.created_at = ? AND p.id < ?))";
+    where += " AND (p.created_at < ? OR (p.created_at = ? AND p.id < ?))";
     args.push(c.createdAt, c.createdAt, c.id);
   }
 
@@ -229,9 +228,7 @@ export function getSessionUserId(
 ): string {
   if (!sessionId) return "";
   const row = database
-    .prepare(
-      "SELECT user_id FROM sessions WHERE id = ? AND expires_at > ?",
-    )
+    .prepare("SELECT user_id FROM sessions WHERE id = ? AND expires_at > ?")
     .get(sessionId, nowIso) as { user_id: string } | undefined;
   return row?.user_id ?? "";
 }

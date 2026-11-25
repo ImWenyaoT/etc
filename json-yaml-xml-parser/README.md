@@ -4,11 +4,11 @@
 
 ## 环境与启动
 
-需要 Node.js 22+。
+需要 Node.js 22+ and pnpm 10+。
 
 ```sh
-npm ci
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 打开 `http://localhost:18102`。
@@ -16,7 +16,7 @@ npm run dev
 ## CLI
 
 ```sh
-npm run cli -- parse <file> [--format|-f json|yaml|xml]
+pnpm cli -- parse <file> [--format|-f json|yaml|xml]
 ```
 
 按扩展名判断格式（`yml` → `yaml`），也可用 `--format` / `-f` 覆盖。将解析结果以格式化 JSON 打印到标准输出。
@@ -30,8 +30,8 @@ XML 属性保存为 `$attributes`、文本为 `$text`、重复元素为数组。
 ## 检查
 
 ```sh
-npm test
-npm run build
+pnpm test
+pnpm build
 ```
 
 ## 目录

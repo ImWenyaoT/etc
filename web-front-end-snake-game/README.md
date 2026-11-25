@@ -4,11 +4,11 @@
 
 ## 环境与启动
 
-需要 Node.js 22+。
+需要 Node.js 22+ and pnpm 10+。
 
 ```sh
-npm ci
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 打开 `http://localhost:18104`。成绩文件由 `SCORES_FILE` 指定（默认 `data/scores.json`）。
@@ -24,8 +24,8 @@ React 管理游戏生命周期；纯 TypeScript 引擎和 Canvas 渲染器分离
 ## 检查
 
 ```sh
-npm test
-npm run build
+pnpm test
+pnpm build
 ```
 
 ## 目录

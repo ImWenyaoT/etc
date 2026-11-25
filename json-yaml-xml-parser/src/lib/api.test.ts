@@ -4,18 +4,16 @@ afterEach(() => vi.unstubAllGlobals());
 it("将解析异常转成白话提示，隐藏底层解析详情", async () => {
   vi.stubGlobal(
     "fetch",
-    vi
-      .fn()
-      .mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            error: {
-              message: "failed to parse yaml: line 2: unexpected token",
-            },
-          }),
-          { status: 400 },
-        ),
+    vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: {
+            message: "failed to parse yaml: line 2: unexpected token",
+          },
+        }),
+        { status: 400 },
       ),
+    ),
   );
   await expect(
     request("/parse", { format: "yaml", source: "name: [" }),

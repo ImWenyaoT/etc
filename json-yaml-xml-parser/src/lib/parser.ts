@@ -37,11 +37,7 @@ export function detect(filePath: string, format: string): string {
  * Parse decodes exactly one document. Empty YAML is null; empty JSON and XML
  * are invalid. XML directives and more than 256 nested elements are rejected.
  */
-export function parse(
-  source: string,
-  filePath = "",
-  format = "",
-): ParseResult {
+export function parse(source: string, filePath = "", format = ""): ParseResult {
   const f = detect(filePath, format);
   try {
     let data: unknown;
@@ -87,11 +83,7 @@ function parseYaml(source: string): unknown {
   return JSON.parse(JSON.stringify(data ?? null));
 }
 
-function add(
-  map: Record<string, unknown>,
-  key: string,
-  value: unknown,
-): void {
+function add(map: Record<string, unknown>, key: string, value: unknown): void {
   if (Object.prototype.hasOwnProperty.call(map, key)) {
     const old = map[key];
     if (Array.isArray(old)) {

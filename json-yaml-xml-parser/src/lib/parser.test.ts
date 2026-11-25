@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  InvalidDocumentError,
-  UnsupportedFormatError,
-  parse,
-} from "./parser";
+import { InvalidDocumentError, UnsupportedFormatError, parse } from "./parser";
 
 describe("parse", () => {
   it("parses json, yaml, and xml into JSON-compatible values", () => {

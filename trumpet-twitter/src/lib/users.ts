@@ -24,9 +24,7 @@ export function setFollow(
       .run(viewerId, targetId, formatUtc());
   } else {
     database
-      .prepare(
-        "DELETE FROM follows WHERE follower_id = ? AND following_id = ?",
-      )
+      .prepare("DELETE FROM follows WHERE follower_id = ? AND following_id = ?")
       .run(viewerId, targetId);
   }
   const user = getUser(database, "id", targetId, viewerId);

@@ -53,9 +53,7 @@ export class SeededRng {
     x ^= (x << 25n) & 0xffffffffffffffffn;
     x ^= x >> 27n;
     this.state = x & 0xffffffffffffffffn;
-    return (
-      (this.state * 2685821657736338717n) & 0xffffffffffffffffn
-    );
+    return (this.state * 2685821657736338717n) & 0xffffffffffffffffn;
   }
 
   /** Uniform integer in [0, n). */
@@ -187,10 +185,7 @@ export class Tree {
       hi: number | null,
     ): { blackHeight: number; height: number; error?: string } => {
       if (n === null) return { blackHeight: 1, height: 0 };
-      if (
-        (lo !== null && n.value <= lo) ||
-        (hi !== null && n.value >= hi)
-      ) {
+      if ((lo !== null && n.value <= lo) || (hi !== null && n.value >= hi)) {
         return { blackHeight: 0, height: 0, error: "invalid ordering" };
       }
       if (isRed(n) && (isRed(n.left) || isRed(n.right))) {

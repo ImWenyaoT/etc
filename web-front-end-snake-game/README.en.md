@@ -4,11 +4,11 @@ Standalone Next.js fullstack app: classic snake with local best score and a scor
 
 ## Setup
 
-Requires Node.js 22+.
+Requires Node.js 22+ and pnpm 10+.
 
 ```sh
-npm ci
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open `http://localhost:18104`. Scores path comes from `SCORES_FILE` (default `data/scores.json`).
@@ -16,6 +16,6 @@ Open `http://localhost:18104`. Scores path comes from `SCORES_FILE` (default `da
 ## Check
 
 ```sh
-npm test
-npm run build
+pnpm test
+pnpm build
 ```

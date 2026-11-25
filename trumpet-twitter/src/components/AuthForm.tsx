@@ -60,9 +60,7 @@ export const AuthForm = ({ onAuthenticated }: AuthFormProps) => {
     <main className="grid min-h-svh place-items-center px-4 py-12">
       <Card className="w-full max-w-lg">
         <CardHeader>
-          <p className="mb-4 text-2xl font-bold text-primary">
-            Trumpet
-          </p>
+          <p className="mb-4 text-2xl font-bold text-primary">Trumpet</p>
           <CardTitle>
             <h1>分享近况</h1>
           </CardTitle>
@@ -87,7 +85,11 @@ export const AuthForm = ({ onAuthenticated }: AuthFormProps) => {
               注册
             </ToggleGroupItem>
           </ToggleGroup>
-          <form onSubmit={submit}>
+          <form
+            onSubmit={(event) => {
+              void submit(event);
+            }}
+          >
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="auth-handle">账号</FieldLabel>

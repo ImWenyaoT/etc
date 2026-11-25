@@ -183,22 +183,26 @@ export default function HomeClient() {
               </div>
               <form
                 className="border-t pt-6"
-                onSubmit={async (e) => {
+                onSubmit={(e) => {
                   e.preventDefault();
                   if (busy || saved) return;
                   setBusy(true);
                   setError("");
-                  try {
-                    await request("/scores", { name, score: hud.score });
-                    setSaved(true);
-                    setMessage("本局成绩已保存。");
-                  } catch (e) {
-                    setError(
-                      e instanceof Error ? e.message : "保存失败，请再试一次。",
-                    );
-                  } finally {
-                    setBusy(false);
-                  }
+                  void (async () => {
+                    try {
+                      await request("/scores", { name, score: hud.score });
+                      setSaved(true);
+                      setMessage("本局成绩已保存。");
+                    } catch (err) {
+                      setError(
+                        err instanceof Error
+                          ? err.message
+                          : "保存失败，请再试一次。",
+                      );
+                    } finally {
+                      setBusy(false);
+                    }
+                  })();
                 }}
               >
                 <FieldGroup>
